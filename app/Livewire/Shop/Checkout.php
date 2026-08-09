@@ -89,7 +89,7 @@ class Checkout extends Component
     {
         $customer = Auth::user()->customer;
         $cart = app(CartService::class);
-        $items = $cart->items($customer?->customer_type ?? 'retail');
+        $items = $cart->items();
 
         return view('livewire.shop.checkout', [
             'customer' => $customer,

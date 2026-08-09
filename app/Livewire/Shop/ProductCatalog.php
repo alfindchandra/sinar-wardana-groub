@@ -53,7 +53,7 @@ class ProductCatalog extends Component
     {
         $query = Product::query()
             ->active()
-            ->with(['category:id,name', 'primaryImage', 'prices', 'warehouses']);
+            ->with(['category:id,name', 'primaryImage', 'variants', 'warehouses']);
 
         if ($this->search !== '') {
             $query->search($this->search);

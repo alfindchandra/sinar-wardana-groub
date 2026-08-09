@@ -24,7 +24,8 @@
             <!-- Items -->
             <div class="lg:col-span-2 glass-card overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/50">
                 @foreach ($items as $item)
-                    <div class="flex items-center gap-4 p-4" wire:key="cart-item-{{ $item['product']->id }}">
+                    @php $variantId = $item['variant']?->id ?? 0; @endphp
+                    <div class="flex items-center gap-4 p-4" wire:key="cart-item-{{ $item['product']->id }}-{{ $variantId }}">
                         <a href="{{ route('shop.products.show', $item['product']) }}" wire:navigate class="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
                             @if ($item['product']->primaryImage)
                                 <img src="{{ $item['product']->primaryImage->url }}" class="w-full h-full object-cover">
@@ -39,15 +40,20 @@
                             <a href="{{ route('shop.products.show', $item['product']) }}" wire:navigate class="text-sm font-medium text-slate-800 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400 line-clamp-1">
                                 {{ $item['product']->name }}
                             </a>
+                            @if ($item['variant'])
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 mt-0.5">
+                                    {{ $item['variant']->name }}
+                                </span>
+                            @endif
                             <p class="text-xs text-slate-400 mt-0.5">Rp {{ number_format($item['price'], 0, ',', '.') }} / {{ \App\Enums\ProductUnit::from($item['product']->unit)->label() }}</p>
                         </div>
 
                         <div class="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden shrink-0">
-                            <button type="button" wire:click="updateQty({{ $item['product']->id }}, {{ $item['qty'] - 1 }})" class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <button type="button" wire:click="updateQty({{ $item['product']->id }}, {{ $variantId }}, {{ $item['qty'] - 1 }})" class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
                             </button>
                             <span class="px-3 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-200 min-w-[2.5rem] text-center">{{ $item['qty'] }}</span>
-                            <button type="button" wire:click="updateQty({{ $item['product']->id }}, {{ $item['qty'] + 1 }})" class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                            <button type="button" wire:click="updateQty({{ $item['product']->id }}, {{ $variantId }}, {{ $item['qty'] + 1 }})" class="px-2.5 py-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                             </button>
                         </div>
@@ -56,7 +62,7 @@
                             <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</p>
                         </div>
 
-                        <button type="button" wire:click="removeItem({{ $item['product']->id }})" wire:confirm="Hapus produk ini dari keranjang?" class="p-2 text-slate-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg transition-colors shrink-0">
+                        <button type="button" wire:click="removeItem({{ $item['product']->id }}, {{ $variantId }})" wire:confirm="Hapus produk ini dari keranjang?" class="p-2 text-slate-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg transition-colors shrink-0">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>

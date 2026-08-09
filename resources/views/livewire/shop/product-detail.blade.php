@@ -48,24 +48,54 @@
                 <span class="text-3xl font-bold text-primary-600 dark:text-primary-400">Rp {{ number_format($this->price, 0, ',', '.') }}</span>
                 <span class="text-sm text-slate-400">/ {{ \App\Enums\ProductUnit::from($product->unit)->label() }}</span>
             </div>
+            <p class="text-xs text-slate-400 mt-1">Harga berlaku untuk pembelian per {{ \App\Enums\ProductUnit::from($product->unit)->label() }} (kemasan utama).</p>
 
-            @if ($this->tierList->isNotEmpty())
-                <div class="mt-4 glass-card p-4">
-                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Harga Grosir</p>
-                    <div class="space-y-1.5">
-                        @foreach ($this->tierList as $tier)
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-slate-600 dark:text-slate-400">{{ $tier->min_qty }}{{ $tier->max_qty ? '-' . $tier->max_qty : '+' }} {{ \App\Enums\ProductUnit::from($product->unit)->label() }}</span>
-                                <span class="font-semibold text-slate-800 dark:text-slate-200">Rp {{ number_format($tier->price, 0, ',', '.') }}</span>
-                            </div>
+            <!-- Breakdown Harga Otomatis (info saja, TIDAK bisa dibeli terpisah) -->
+            @if ($product->hasBreakdown())
+                <div class="mt-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Estimasi Harga Pecahan
+                    </p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300">{{ $product->breakdownDescription() }}</p>
+                    <p class="text-[11px] text-slate-400 mt-1.5">*Hanya informasi. Pembelian tetap dalam satuan {{ \App\Enums\ProductUnit::from($product->unit)->label() }} (tidak dijual per Bal/Pcs terpisah).</p>
+                </div>
+            @endif
+
+            <!-- Pilih Varian (wajib jika ada) -->
+            @if ($product->hasVariants())
+                <div class="mt-6">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                        Pilih Varian <span class="text-danger-500">*</span>
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($product->variants->where('is_active', true) as $variant)
+                            <button
+                                type="button"
+                                wire:click="selectVariant({{ $variant->id }})"
+                                @disabled($variant->stock <= 0)
+                                class="px-4 py-2 rounded-xl text-sm font-medium border-2 transition-colors disabled:opacity-40 disabled:cursor-not-allowed
+                                    {{ $selectedVariantId === $variant->id
+                                        ? 'border-primary-600 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-primary-300' }}"
+                            >
+                                {{ $variant->name }}
+                                @if ($variant->stock <= 0)
+                                    <span class="text-[10px] block text-danger-500">Habis</span>
+                                @endif
+                            </button>
                         @endforeach
                     </div>
+                    @if (! $selectedVariantId)
+                        <p class="mt-2 text-xs text-warning-600 dark:text-warning-400">Pilih salah satu varian sebelum menambahkan ke keranjang.</p>
+                    @endif
                 </div>
             @endif
 
             <div class="mt-5 flex items-center gap-3 text-sm">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full font-medium {{ $product->total_stock <= 0 ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400' : ($product->total_stock <= $product->min_stock ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400' : 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400') }}">
-                    Stok: {{ $product->total_stock }}
+                @php $displayStock = $product->hasVariants() ? ($product->variants->firstWhere('id', $selectedVariantId)?->stock) : $product->total_stock; @endphp
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full font-medium {{ ($displayStock ?? 0) <= 0 ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400' : 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400' }}">
+                    Stok: {{ $displayStock ?? '-' }}
                 </span>
                 <span class="text-slate-400">Min. pembelian {{ $product->min_purchase }} {{ \App\Enums\ProductUnit::from($product->unit)->label() }}</span>
             </div>
@@ -89,9 +119,15 @@
                     </button>
                 </div>
 
-                <button type="button" wire:click="addCurrentToCart" @disabled($product->total_stock <= 0) class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 rounded-xl font-semibold text-sm text-white shadow-sm shadow-primary-600/20 hover:bg-primary-700 disabled:bg-slate-300 disabled:cursor-not-allowed dark:disabled:bg-slate-700 transition-colors">
+                <button type="button" wire:click="addCurrentToCart" @disabled(! $this->canAddToCart) class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 rounded-xl font-semibold text-sm text-white shadow-sm shadow-primary-600/20 hover:bg-primary-700 disabled:bg-slate-300 disabled:cursor-not-allowed dark:disabled:bg-slate-700 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17"></path></svg>
-                    {{ $product->total_stock <= 0 ? 'Stok Habis' : 'Tambah ke Keranjang' }}
+                    @if ($product->hasVariants() && ! $selectedVariantId)
+                        Pilih Varian Dulu
+                    @elseif (! $this->canAddToCart)
+                        Stok Habis
+                    @else
+                        Tambah ke Keranjang
+                    @endif
                 </button>
             </div>
         </div>

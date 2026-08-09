@@ -26,7 +26,7 @@ class Home extends Component
         $promos = Promo::active()->ongoing()->latest('start_date')->take(3)->get();
 
         $newestProducts = Product::active()
-            ->with(['category:id,name', 'primaryImage', 'prices', 'warehouses'])
+            ->with(['category:id,name', 'primaryImage', 'variants', 'warehouses'])
             ->latest()
             ->take(10)
             ->get();

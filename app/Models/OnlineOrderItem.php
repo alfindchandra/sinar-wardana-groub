@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class OnlineOrderItem extends Model
 {
     protected $fillable = [
-        'online_order_id', 'product_id', 'qty', 'price', 'subtotal'
+        'online_order_id', 'product_id', 'product_variant_id', 'product_variant_name', 'qty', 'price', 'subtotal'
     ];
 
     protected $casts = [
@@ -24,5 +24,10 @@ class OnlineOrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 }

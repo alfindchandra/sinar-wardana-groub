@@ -75,7 +75,7 @@
                 <!-- Items -->
                 <div class="glass-card overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/50">
                     @foreach ($items as $item)
-                        <div class="flex items-center gap-4 p-4" wire:key="checkout-item-{{ $item['product']->id }}">
+                        <div class="flex items-center gap-4 p-4" wire:key="checkout-item-{{ $item['product']->id }}-{{ $item['variant']?->id ?? 0 }}">
                             <div class="w-14 h-14 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
                                 @if ($item['product']->primaryImage)
                                     <img src="{{ $item['product']->primaryImage->url }}" class="w-full h-full object-cover">
@@ -83,6 +83,11 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1">{{ $item['product']->name }}</p>
+                                @if ($item['variant'])
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 mt-0.5">
+                                        {{ $item['variant']->name }}
+                                    </span>
+                                @endif
                                 <p class="text-xs text-slate-400 mt-0.5">{{ $item['qty'] }} x Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
                             </div>
                             <p class="text-sm font-bold text-slate-800 dark:text-slate-200 shrink-0">Rp {{ number_format($item['subtotal'], 0, ',', '.') }}</p>

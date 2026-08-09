@@ -4,7 +4,6 @@ namespace App\Livewire\Shop;
 
 use App\Livewire\Shop\Concerns\HasCart;
 use App\Models\Product;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -15,19 +14,31 @@ class ProductDetail extends Component
 
     public Product $product;
     public int $qty = 1;
-    public int $activeImageIndex = 0;
+    public ?int $selectedVariantId = null;
 
     public function mount(Product $product): void
     {
         abort_unless($product->is_active, 404);
 
-        $this->product = $product->load(['category', 'supplier:id,name', 'images', 'prices', 'warehouses']);
+        $this->product = $product->load(['category', 'supplier:id,name', 'images', 'variants', 'warehouses']);
         $this->qty = max(1, $product->min_purchase);
+
+        // Jika hanya ada 1 varian aktif, pilih otomatis untuk mempercepat alur beli.
+        $activeVariants = $this->product->variants->where('is_active', true);
+        if ($activeVariants->count() === 1) {
+            $this->selectedVariantId = $activeVariants->first()->id;
+        }
+    }
+
+    public function selectVariant(int $variantId): void
+    {
+        $this->selectedVariantId = $variantId;
     }
 
     public function increment(): void
     {
-        if ($this->qty < $this->product->total_stock) {
+        $max = $this->currentStock();
+        if ($this->qty < $max) {
             $this->qty++;
         }
     }
@@ -40,9 +51,25 @@ class ProductDetail extends Component
         }
     }
 
+    protected function currentStock(): int
+    {
+        if ($this->product->hasVariants()) {
+            $variant = $this->product->variants->firstWhere('id', $this->selectedVariantId);
+
+            return $variant?->stock ?? 0;
+        }
+
+        return $this->product->total_stock;
+    }
+
     public function addCurrentToCart(): void
     {
-        $this->addToCart($this->product->id, $this->qty);
+        if ($this->product->hasVariants() && ! $this->selectedVariantId) {
+            $this->dispatch('toast', type: 'error', message: 'Silakan pilih varian terlebih dahulu.');
+            return;
+        }
+
+        $this->addToCart($this->product->id, $this->qty, $this->selectedVariantId ?? 0);
     }
 
     public function title(): string
@@ -50,30 +77,26 @@ class ProductDetail extends Component
         return $this->product->name . ' - ' . config('app.name', 'Sinar Wardana');
     }
 
-    protected function customerType(): string
-    {
-        $user = Auth::user();
-
-        return $user?->customer?->customer_type ?? 'retail';
-    }
-
     public function getPriceProperty(): float
     {
-        return $this->product->priceFor($this->customerType(), $this->qty);
+        $variant = $this->product->variants->firstWhere('id', $this->selectedVariantId);
+
+        return $this->product->checkoutPrice() + ($variant ? (float) $variant->extra_price : 0);
     }
 
-    public function getTierListProperty()
+    public function getCanAddToCartProperty(): bool
     {
-        return $this->product->prices
-            ->where('price_type', $this->customerType())
-            ->where('is_active', true)
-            ->sortBy('min_qty');
+        if ($this->product->hasVariants() && ! $this->selectedVariantId) {
+            return false;
+        }
+
+        return $this->currentStock() > 0;
     }
 
     public function render()
     {
         $related = Product::active()
-            ->with(['primaryImage', 'prices', 'warehouses'])
+            ->with(['primaryImage', 'warehouses'])
             ->where('category_id', $this->product->category_id)
             ->where('id', '!=', $this->product->id)
             ->take(5)

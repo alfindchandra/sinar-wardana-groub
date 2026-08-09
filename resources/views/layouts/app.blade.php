@@ -51,7 +51,7 @@
                 </a>
 
                 <!-- Master Data -->
-                <div x-data="{ open: false }" class="space-y-1">
+                <div x-data="{ open: {{ request()->routeIs('master-data.*') ? 'true' : 'false' }} }" class="space-y-1">
                     <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-800/50 hover:text-white transition-all duration-200">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
@@ -60,10 +60,10 @@
                         <svg :class="{'rotate-90': open}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                     <div x-show="open" x-transition.opacity class="pl-11 pr-4 py-2 space-y-2">
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Produk</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Kategori</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Supplier</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Gudang</a>
+                        <a wire:navigate href="{{ route('master-data.products.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.products.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Produk</a>
+                        <a wire:navigate href="{{ route('master-data.categories.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.categories.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Kategori</a>
+                        <a wire:navigate href="{{ route('master-data.suppliers.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.suppliers.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Supplier</a>
+                        <a wire:navigate href="{{ route('master-data.warehouses.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.warehouses.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Gudang</a>
                     </div>
                 </div>
 
@@ -341,6 +341,9 @@
             
         </div>
     </div>
+
+    <!-- Global Toast Notifications -->
+    <x-toast />
 
     @livewireScripts
 </body>

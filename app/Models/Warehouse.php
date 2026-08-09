@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Observers\WarehouseObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[ObservedBy([WarehouseObserver::class])]
 class Warehouse extends Model
 {
     use SoftDeletes;
@@ -45,5 +48,17 @@ class Warehouse extends Model
     public function scopeByType($query, $type)
     {
         return $query->where('type', $type);
+    }
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            if (empty($model->code)) {
+                $latest = self::withTrashed()->orderBy('id', 'desc')->first();
+                $nextId = $latest ? $latest->id + 1 : 1;
+                $model->code = 'GD-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+            }
+        });
     }
 }

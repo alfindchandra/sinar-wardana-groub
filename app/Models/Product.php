@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Observers\ProductObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+#[ObservedBy([ProductObserver::class])]
 class Product extends Model
 {
     use SoftDeletes;
@@ -91,9 +94,11 @@ class Product extends Model
 
     public function scopeSearch($query, $term)
     {
-        return $query->where('name', 'like', "%{$term}%")
-                     ->orWhere('sku', 'like', "%{$term}%")
-                     ->orWhere('barcode', 'like', "%{$term}%");
+        return $query->where(function ($q) use ($term) {
+            $q->where('name', 'like', "%{$term}%")
+                ->orWhere('sku', 'like', "%{$term}%")
+                ->orWhere('barcode', 'like', "%{$term}%");
+        });
     }
 
     public function getFormattedSellPriceAttribute()
@@ -112,6 +117,31 @@ class Product extends Model
         if ($stock <= 0) return 'Out of Stock';
         if ($stock <= $this->min_stock) return 'Low Stock';
         return 'In Stock';
+    }
+
+    /**
+     * Resolusi harga jual untuk tipe customer & qty tertentu.
+     * Prioritas: tier harga bertingkat (product_prices) yang aktif & qty masuk rentang,
+     * lalu fallback ke kolom harga flat sesuai tipe customer.
+     */
+    public function priceFor(string $customerType = 'retail', int $qty = 1): float
+    {
+        $tier = $this->prices
+            ->where('price_type', $customerType)
+            ->where('is_active', true)
+            ->filter(fn ($p) => $qty >= $p->min_qty && ($p->max_qty === null || $qty <= $p->max_qty))
+            ->sortByDesc('min_qty')
+            ->first();
+
+        if ($tier) {
+            return (float) $tier->price;
+        }
+
+        return match ($customerType) {
+            'agen' => (float) ($this->agent_price ?: $this->sell_price),
+            'distributor' => (float) ($this->distributor_price ?: $this->sell_price),
+            default => (float) $this->sell_price,
+        };
     }
 
     protected static function boot()

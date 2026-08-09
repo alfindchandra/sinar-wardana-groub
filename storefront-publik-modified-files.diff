@@ -1,0 +1,306 @@
+diff --git a/app/Models/Product.php b/app/Models/Product.php
+index 598dc05..524938f 100644
+--- a/app/Models/Product.php
++++ b/app/Models/Product.php
+@@ -2,10 +2,13 @@
+ 
+ namespace App\Models;
+ 
++use App\Observers\ProductObserver;
++use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\SoftDeletes;
+ use Illuminate\Support\Str;
+ 
++#[ObservedBy([ProductObserver::class])]
+ class Product extends Model
+ {
+     use SoftDeletes;
+@@ -91,9 +94,11 @@ public function scopeLowStock($query)
+ 
+     public function scopeSearch($query, $term)
+     {
+-        return $query->where('name', 'like', "%{$term}%")
+-                     ->orWhere('sku', 'like', "%{$term}%")
+-                     ->orWhere('barcode', 'like', "%{$term}%");
++        return $query->where(function ($q) use ($term) {
++            $q->where('name', 'like', "%{$term}%")
++                ->orWhere('sku', 'like', "%{$term}%")
++                ->orWhere('barcode', 'like', "%{$term}%");
++        });
+     }
+ 
+     public function getFormattedSellPriceAttribute()
+@@ -114,6 +119,31 @@ public function getStockStatusAttribute()
+         return 'In Stock';
+     }
+ 
++    /**
++     * Resolusi harga jual untuk tipe customer & qty tertentu.
++     * Prioritas: tier harga bertingkat (product_prices) yang aktif & qty masuk rentang,
++     * lalu fallback ke kolom harga flat sesuai tipe customer.
++     */
++    public function priceFor(string $customerType = 'retail', int $qty = 1): float
++    {
++        $tier = $this->prices
++            ->where('price_type', $customerType)
++            ->where('is_active', true)
++            ->filter(fn ($p) => $qty >= $p->min_qty && ($p->max_qty === null || $qty <= $p->max_qty))
++            ->sortByDesc('min_qty')
++            ->first();
++
++        if ($tier) {
++            return (float) $tier->price;
++        }
++
++        return match ($customerType) {
++            'agen' => (float) ($this->agent_price ?: $this->sell_price),
++            'distributor' => (float) ($this->distributor_price ?: $this->sell_price),
++            default => (float) $this->sell_price,
++        };
++    }
++
+     protected static function boot()
+     {
+         parent::boot();
+diff --git a/resources/views/livewire/pages/auth/login.blade.php b/resources/views/livewire/pages/auth/login.blade.php
+index 099aca6..8909141 100644
+--- a/resources/views/livewire/pages/auth/login.blade.php
++++ b/resources/views/livewire/pages/auth/login.blade.php
+@@ -1,6 +1,7 @@
+ <?php
+ 
+ use App\Livewire\Forms\LoginForm;
++use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\Session;
+ use Livewire\Attributes\Layout;
+ use Livewire\Volt\Component;
+@@ -20,7 +21,10 @@ public function login(): void
+ 
+         Session::regenerate();
+ 
+-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
++        $user = Auth::user();
++        $default = $user->hasRole('pelanggan') ? route('shop.home', absolute: false) : route('dashboard', absolute: false);
++
++        $this->redirectIntended(default: $default, navigate: true);
+     }
+ }; ?>
+ 
+diff --git a/resources/views/livewire/pages/auth/register.blade.php b/resources/views/livewire/pages/auth/register.blade.php
+index e236e9f..f15e850 100644
+--- a/resources/views/livewire/pages/auth/register.blade.php
++++ b/resources/views/livewire/pages/auth/register.blade.php
+@@ -1,8 +1,10 @@
+ <?php
+ 
++use App\Models\Customer;
+ use App\Models\User;
+ use Illuminate\Auth\Events\Registered;
+ use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Facades\Hash;
+ use Illuminate\Validation\Rules;
+ use Livewire\Attributes\Layout;
+@@ -15,8 +17,14 @@
+     public string $password = '';
+     public string $password_confirmation = '';
+ 
++    public string $store_name = '';
++    public string $phone = '';
++    public string $address = '';
++    public string $city = '';
++
+     /**
+-     * Handle an incoming registration request.
++     * Handle an incoming registration request. Registrasi publik selalu membuat
++     * akun customer (role: pelanggan) beserta profil tokonya.
+      */
+     public function register(): void
+     {
+@@ -24,64 +32,113 @@ public function register(): void
+             'name' => ['required', 'string', 'max:255'],
+             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
++            'store_name' => ['required', 'string', 'max:200'],
++            'phone' => ['required', 'string', 'max:20'],
++            'address' => ['required', 'string', 'max:2000'],
++            'city' => ['required', 'string', 'max:100'],
+         ]);
+ 
+-        $validated['password'] = Hash::make($validated['password']);
++        $user = DB::transaction(function () use ($validated) {
++            $user = User::create([
++                'name' => $validated['name'],
++                'email' => $validated['email'],
++                'password' => Hash::make($validated['password']),
++            ]);
++
++            $user->assignRole('pelanggan');
++
++            Customer::create([
++                'user_id' => $user->id,
++                'store_name' => $validated['store_name'],
++                'owner_name' => $validated['name'],
++                'phone' => $validated['phone'],
++                'email' => $validated['email'],
++                'address' => $validated['address'],
++                'city' => $validated['city'],
++                'customer_type' => 'retail',
++                'is_active' => true,
++            ]);
++
++            return $user;
++        });
+ 
+-        event(new Registered($user = User::create($validated)));
++        event(new Registered($user));
+ 
+         Auth::login($user);
+ 
+-        $this->redirect(route('dashboard', absolute: false), navigate: true);
++        $this->redirect(route('shop.home', absolute: false), navigate: true);
+     }
+ }; ?>
+ 
+ <div>
+-    <form wire:submit="register">
++    <p class="text-sm text-gray-600 mb-4">Daftar sebagai toko/pelanggan untuk mulai belanja dan memantau pesanan Anda.</p>
++
++    <form wire:submit="register" class="space-y-4">
+         <!-- Name -->
+         <div>
+-            <x-input-label for="name" :value="__('Name')" />
++            <x-input-label for="name" :value="__('Nama Lengkap')" />
+             <x-text-input wire:model="name" id="name" class="block mt-1 w-full" type="text" name="name" required autofocus autocomplete="name" />
+             <x-input-error :messages="$errors->get('name')" class="mt-2" />
+         </div>
+ 
+         <!-- Email Address -->
+-        <div class="mt-4">
++        <div>
+             <x-input-label for="email" :value="__('Email')" />
+             <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autocomplete="username" />
+             <x-input-error :messages="$errors->get('email')" class="mt-2" />
+         </div>
+ 
+         <!-- Password -->
+-        <div class="mt-4">
+-            <x-input-label for="password" :value="__('Password')" />
++        <div class="grid grid-cols-2 gap-4">
++            <div>
++                <x-input-label for="password" :value="__('Password')" />
++                <x-text-input wire:model="password" id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
++                <x-input-error :messages="$errors->get('password')" class="mt-2" />
++            </div>
++            <div>
++                <x-input-label for="password_confirmation" :value="__('Konfirmasi Password')" />
++                <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
++                <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
++            </div>
++        </div>
+ 
+-            <x-text-input wire:model="password" id="password" class="block mt-1 w-full"
+-                            type="password"
+-                            name="password"
+-                            required autocomplete="new-password" />
++        <hr class="border-gray-200">
+ 
+-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
++        <!-- Store Name -->
++        <div>
++            <x-input-label for="store_name" :value="__('Nama Toko')" />
++            <x-text-input wire:model="store_name" id="store_name" class="block mt-1 w-full" type="text" name="store_name" required />
++            <x-input-error :messages="$errors->get('store_name')" class="mt-2" />
+         </div>
+ 
+-        <!-- Confirm Password -->
+-        <div class="mt-4">
+-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
++        <!-- Phone -->
++        <div>
++            <x-input-label for="phone" :value="__('No. Telepon / WhatsApp')" />
++            <x-text-input wire:model="phone" id="phone" class="block mt-1 w-full" type="text" name="phone" placeholder="08xxxxxxxxxx" required />
++            <x-input-error :messages="$errors->get('phone')" class="mt-2" />
++        </div>
+ 
+-            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
+-                            type="password"
+-                            name="password_confirmation" required autocomplete="new-password" />
++        <!-- Address -->
++        <div>
++            <x-input-label for="address" :value="__('Alamat')" />
++            <textarea wire:model="address" id="address" rows="2" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full" required></textarea>
++            <x-input-error :messages="$errors->get('address')" class="mt-2" />
++        </div>
+ 
+-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
++        <!-- City -->
++        <div>
++            <x-input-label for="city" :value="__('Kota')" />
++            <x-text-input wire:model="city" id="city" class="block mt-1 w-full" type="text" name="city" required />
++            <x-input-error :messages="$errors->get('city')" class="mt-2" />
+         </div>
+ 
+         <div class="flex items-center justify-end mt-4">
+             <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}" wire:navigate>
+-                {{ __('Already registered?') }}
++                {{ __('Sudah punya akun?') }}
+             </a>
+ 
+             <x-primary-button class="ms-4">
+-                {{ __('Register') }}
++                {{ __('Daftar') }}
+             </x-primary-button>
+         </div>
+     </form>
+diff --git a/routes/web.php b/routes/web.php
+index b6367e5..c669ca8 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -2,13 +2,44 @@
+ 
+ use App\Http\Controllers\DashboardController;
+ use App\Http\Controllers\PortalController;
++use App\Livewire\MasterData\CategoryManager;
++use App\Livewire\MasterData\ProductForm;
++use App\Livewire\MasterData\ProductManager;
++use App\Livewire\MasterData\SupplierManager;
++use App\Livewire\MasterData\WarehouseManager;
++use App\Livewire\Shop\CartPage;
++use App\Livewire\Shop\Checkout;
++use App\Livewire\Shop\Home as ShopHome;
++use App\Livewire\Shop\OrderSuccess;
++use App\Livewire\Shop\ProductCatalog;
++use App\Livewire\Shop\ProductDetail;
+ use Illuminate\Support\Facades\Route;
+ 
+-Route::view('/', 'welcome');
++// ==== Storefront Publik (bisa diakses siapa saja, tanpa login) ====
++Route::get('/', ShopHome::class)->name('shop.home');
++Route::get('/produk', ProductCatalog::class)->name('shop.products');
++Route::get('/produk/{product}', ProductDetail::class)->name('shop.products.show');
++Route::get('/keranjang', CartPage::class)->name('shop.cart');
++
++// ==== Checkout & Order (butuh login sebagai pelanggan) ====
++Route::middleware(['auth'])->group(function () {
++    Route::get('/checkout', Checkout::class)->name('shop.checkout');
++    Route::get('/pesanan/{order}/sukses', OrderSuccess::class)->name('shop.order.success');
++});
+ 
+ Route::middleware(['auth', 'verified'])->group(function () {
+     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+     Route::get('/portal/dashboard', [PortalController::class, 'dashboard'])->name('portal.dashboard');
++
++    Route::prefix('master-data')->name('master-data.')->group(function () {
++        Route::get('/kategori', CategoryManager::class)->name('categories.index');
++        Route::get('/supplier', SupplierManager::class)->name('suppliers.index');
++        Route::get('/gudang', WarehouseManager::class)->name('warehouses.index');
++
++        Route::get('/produk', ProductManager::class)->name('products.index');
++        Route::get('/produk/tambah', ProductForm::class)->name('products.create');
++        Route::get('/produk/{product}/edit', ProductForm::class)->name('products.edit');
++    });
+ });
+ 
+ Route::view('profile', 'profile')

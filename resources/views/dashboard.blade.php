@@ -25,7 +25,7 @@
     </x-slot>
 
     <x-slot name="actions">
-        <button type="button" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-sm text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-900 transition-all">
+        <button type="button" onclick="toast('success', 'Laporan sedang disiapkan dan akan diunduh otomatis.', 'Export Dimulai')" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-sm text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-900 transition-all">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
             Export Laporan
         </button>
@@ -226,19 +226,99 @@
                 </div>
             </div>
 
+            <!-- Card 9: Produk Hampir Habis -->
+            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Produk Hampir Habis</p>
+                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">18</h4>
+                    </div>
+                    <div class="p-2.5 bg-danger-100 dark:bg-danger-900/30 text-danger-600 dark:text-danger-400 rounded-lg group-hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <a href="#produk-hampir-habis" class="flex items-center text-danger-600 dark:text-danger-400 font-medium bg-danger-50 dark:bg-danger-900/20 px-2 py-0.5 rounded-md hover:bg-danger-100 dark:hover:bg-danger-900/40 transition-colors">
+                        Perlu Restock
+                    </a>
+                    <span class="text-slate-400 ml-2">di bawah min. stok</span>
+                </div>
+            </div>
+
+            <!-- Card 10: Produk Terlaris -->
+            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Produk Terlaris</p>
+                        <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 truncate">Beras BMW 5Kg</h4>
+                    </div>
+                    <div class="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:scale-110 transition-transform shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="flex items-center text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-md">
+                        1.250 pcs
+                    </span>
+                    <span class="text-slate-400 ml-2">bulan ini</span>
+                </div>
+            </div>
+
+            <!-- Card 11: Sales Terbaik -->
+            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Sales Terbaik</p>
+                        <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 truncate">Dimas Prasetyo</h4>
+                    </div>
+                    <div class="p-2.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg group-hover:scale-110 transition-transform shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="flex items-center text-purple-600 dark:text-purple-400 font-medium bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-md">
+                        Rp 350 Juta
+                    </span>
+                    <span class="text-slate-400 ml-2">omzet bulan ini</span>
+                </div>
+            </div>
+
+            <!-- Card 12: Pengiriman Hari Ini -->
+            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pengiriman Hari Ini</p>
+                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">14</h4>
+                    </div>
+                    <div class="p-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg group-hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <a href="#jadwal-pengiriman" class="flex items-center text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                        9 Dalam Perjalanan
+                    </a>
+                    <span class="text-slate-400 ml-2">5 selesai</span>
+                </div>
+            </div>
+
         </div>
+
 
         <!-- Charts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Penjualan Harian -->
-            <div class="glass-card p-5">
+            <div class="glass-card p-5" x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 700)">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white">Penjualan 7 Hari Terakhir</h3>
-                    <button class="text-slate-400 hover:text-primary-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                    <button @click="loading = true; setTimeout(() => { loading = false; toast('info', 'Grafik penjualan diperbarui.', 'Data Dimuat Ulang') }, 700)" class="text-slate-400 hover:text-primary-600 transition-colors" title="Muat ulang data">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     </button>
                 </div>
-                <div class="relative h-72 w-full">
+                <div x-show="loading" x-cloak>
+                    <x-loading-skeleton type="chart" class="!p-0 !shadow-none !border-0 !bg-transparent" />
+                </div>
+                <div x-show="!loading" x-cloak class="relative h-72 w-full">
                     <canvas id="chartPenjualanHarian"></canvas>
                 </div>
             </div>
@@ -246,7 +326,7 @@
             <!-- Penjualan Bulanan -->
             <div class="glass-card p-5">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Trend Omzet 12 Bulan</h3>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Penjualan Bulanan (12 Bulan)</h3>
                     <button class="text-slate-400 hover:text-primary-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                     </button>
@@ -275,13 +355,25 @@
                     <canvas id="chartSalesTerbaik"></canvas>
                 </div>
             </div>
+
+            <!-- Omzet Tahunan (Area Chart) -->
+            <div class="glass-card p-5 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Omzet Tahunan</h3>
+                    <span class="text-xs font-medium text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 py-1">Tahun {{ date('Y') }}</span>
+                </div>
+                <div class="relative h-72 w-full">
+                    <canvas id="chartOmzetTahunan"></canvas>
+                </div>
+            </div>
         </div>
 
         <!-- Tables Section -->
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Produk Hampir Habis -->
-            <div class="glass-card overflow-hidden">
+            <div id="produk-hampir-habis" class="glass-card overflow-hidden scroll-mt-24">
                 <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center">
                         <svg class="w-5 h-5 text-warning-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
@@ -350,7 +442,7 @@
             </div>
 
             <!-- Pengiriman Hari Ini -->
-            <div class="glass-card overflow-hidden">
+            <div id="jadwal-pengiriman" class="glass-card overflow-hidden scroll-mt-24">
                 <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center">
                         <svg class="w-5 h-5 text-primary-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -568,27 +660,21 @@
                 }
             });
 
-            // 2. Penjualan Bulanan (Line Chart)
+            // 2. Penjualan Bulanan (Line Chart) - jumlah Sales Order per bulan
             const ctxBulanan = document.getElementById('chartPenjualanBulanan').getContext('2d');
-            
-            // Gradient fill
-            const gradientBulanan = ctxBulanan.createLinearGradient(0, 0, 0, 400);
-            gradientBulanan.addColorStop(0, 'rgba(16, 185, 129, 0.5)');   
-            gradientBulanan.addColorStop(1, 'rgba(16, 185, 129, 0)');
-
             new Chart(ctxBulanan, {
                 type: 'line',
                 data: {
                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
                     datasets: [{
-                        label: 'Omzet (Juta Rp)',
-                        data: [850, 920, 880, 1100, 1050, 1200, 1150, 1300, 1450, 0, 0, 0],
-                        borderColor: '#10b981',
-                        backgroundColor: gradientBulanan,
+                        label: 'Jumlah SO',
+                        data: [95, 110, 102, 128, 121, 140, 133, 150, 168, 0, 0, 0],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'transparent',
                         borderWidth: 3,
                         tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: '#10b981',
+                        fill: false,
+                        pointBackgroundColor: '#3b82f6',
                         pointBorderColor: '#fff',
                         pointBorderWidth: 2,
                         pointRadius: 4,
@@ -664,7 +750,48 @@
                     }
                 }
             });
-            
+
+            // 5. Omzet Tahunan (Area Chart)
+            const ctxOmzet = document.getElementById('chartOmzetTahunan').getContext('2d');
+
+            // Gradient fill
+            const gradientOmzet = ctxOmzet.createLinearGradient(0, 0, 0, 400);
+            gradientOmzet.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
+            gradientOmzet.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+            new Chart(ctxOmzet, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+                    datasets: [{
+                        label: 'Omzet (Juta Rp)',
+                        data: [850, 920, 880, 1100, 1050, 1200, 1150, 1300, 1450, 0, 0, 0],
+                        borderColor: '#10b981',
+                        backgroundColor: gradientOmzet,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: gridColor, drawBorder: false }
+                        },
+                        x: { grid: { display: false, drawBorder: false } }
+                    }
+                }
+            });
+
             // Listen for dark mode toggle to update chart colors
             window.addEventListener('storage', () => {
                 // To be implemented: update chart config colors based on dark mode toggle

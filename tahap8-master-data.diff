@@ -1,0 +1,704 @@
+diff --git a/app/Models/Category.php b/app/Models/Category.php
+index f96aad6..3bdf293 100644
+--- a/app/Models/Category.php
++++ b/app/Models/Category.php
+@@ -2,10 +2,13 @@
+ 
+ namespace App\Models;
+ 
++use App\Observers\CategoryObserver;
++use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\SoftDeletes;
+ use Illuminate\Support\Str;
+ 
++#[ObservedBy([CategoryObserver::class])]
+ class Category extends Model
+ {
+     use SoftDeletes;
+diff --git a/app/Models/Product.php b/app/Models/Product.php
+index 598dc05..fb7d7a6 100644
+--- a/app/Models/Product.php
++++ b/app/Models/Product.php
+@@ -2,10 +2,13 @@
+ 
+ namespace App\Models;
+ 
++use App\Observers\ProductObserver;
++use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\SoftDeletes;
+ use Illuminate\Support\Str;
+ 
++#[ObservedBy([ProductObserver::class])]
+ class Product extends Model
+ {
+     use SoftDeletes;
+diff --git a/app/Models/ProductImage.php b/app/Models/ProductImage.php
+index 0f1244e..01bc82a 100644
+--- a/app/Models/ProductImage.php
++++ b/app/Models/ProductImage.php
+@@ -19,4 +19,9 @@ public function product()
+     {
+         return $this->belongsTo(Product::class);
+     }
++
++    public function getUrlAttribute(): string
++    {
++        return \Illuminate\Support\Facades\Storage::disk('public')->url($this->image_path);
++    }
+ }
+diff --git a/app/Models/Supplier.php b/app/Models/Supplier.php
+index f0b1f78..79f609f 100644
+--- a/app/Models/Supplier.php
++++ b/app/Models/Supplier.php
+@@ -2,9 +2,12 @@
+ 
+ namespace App\Models;
+ 
++use App\Observers\SupplierObserver;
++use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\SoftDeletes;
+ 
++#[ObservedBy([SupplierObserver::class])]
+ class Supplier extends Model
+ {
+     use SoftDeletes;
+diff --git a/app/Models/Warehouse.php b/app/Models/Warehouse.php
+index 94f8292..d163ef3 100644
+--- a/app/Models/Warehouse.php
++++ b/app/Models/Warehouse.php
+@@ -2,9 +2,12 @@
+ 
+ namespace App\Models;
+ 
++use App\Observers\WarehouseObserver;
++use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+ use Illuminate\Database\Eloquent\Model;
+ use Illuminate\Database\Eloquent\SoftDeletes;
+ 
++#[ObservedBy([WarehouseObserver::class])]
+ class Warehouse extends Model
+ {
+     use SoftDeletes;
+@@ -46,4 +49,16 @@ public function scopeByType($query, $type)
+     {
+         return $query->where('type', $type);
+     }
++
++    protected static function boot()
++    {
++        parent::boot();
++        static::creating(function ($model) {
++            if (empty($model->code)) {
++                $latest = self::withTrashed()->orderBy('id', 'desc')->first();
++                $nextId = $latest ? $latest->id + 1 : 1;
++                $model->code = 'GD-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
++            }
++        });
++    }
+ }
+diff --git a/app/Providers/AppServiceProvider.php b/app/Providers/AppServiceProvider.php
+index 452e6b6..dc75fdc 100644
+--- a/app/Providers/AppServiceProvider.php
++++ b/app/Providers/AppServiceProvider.php
+@@ -2,16 +2,37 @@
+ 
+ namespace App\Providers;
+ 
++use App\Repositories\CategoryRepository;
++use App\Repositories\Interfaces\CategoryRepositoryInterface;
++use App\Repositories\Interfaces\ProductRepositoryInterface;
++use App\Repositories\Interfaces\SupplierRepositoryInterface;
++use App\Repositories\Interfaces\WarehouseRepositoryInterface;
++use App\Repositories\ProductRepository;
++use App\Repositories\SupplierRepository;
++use App\Repositories\WarehouseRepository;
+ use Illuminate\Support\ServiceProvider;
+ 
+ class AppServiceProvider extends ServiceProvider
+ {
++    /**
++     * Repository interface => implementation bindings.
++     * Setiap modul (Tahap 8-18) menambahkan baris baru di sini.
++     */
++    protected array $repositories = [
++        CategoryRepositoryInterface::class => CategoryRepository::class,
++        SupplierRepositoryInterface::class => SupplierRepository::class,
++        WarehouseRepositoryInterface::class => WarehouseRepository::class,
++        ProductRepositoryInterface::class => ProductRepository::class,
++    ];
++
+     /**
+      * Register any application services.
+      */
+     public function register(): void
+     {
+-        //
++        foreach ($this->repositories as $interface => $implementation) {
++            $this->app->bind($interface, $implementation);
++        }
+     }
+ 
+     /**
+diff --git a/resources/css/app.css b/resources/css/app.css
+index c47c705..204e045 100644
+--- a/resources/css/app.css
++++ b/resources/css/app.css
+@@ -4,6 +4,10 @@
+ @tailwind components;
+ @tailwind utilities;
+ 
++[x-cloak] {
++  display: none !important;
++}
++
+ @layer utilities {
+   .glass {
+     @apply bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-slate-700/50 shadow-sm;
+diff --git a/resources/js/app.js b/resources/js/app.js
+index ec2ad5b..ea74183 100644
+--- a/resources/js/app.js
++++ b/resources/js/app.js
+@@ -4,3 +4,14 @@ import Swal from 'sweetalert2';
+ 
+ window.Chart = Chart;
+ window.Swal = Swal;
++
++/**
++ * Helper global untuk memicu <x-toast /> dari mana saja.
++ * Contoh: toast('success', 'Data berhasil disimpan', 'Berhasil')
++ * Livewire component juga bisa memicu ini lewat: $this->dispatch('toast', type: 'success', message: '...')
++ */
++window.toast = function (type = 'info', message = '', title = null, duration = 4000) {
++    window.dispatchEvent(new CustomEvent('toast', {
++        detail: { type, message, title, duration },
++    }));
++};
+diff --git a/resources/views/dashboard.blade.php b/resources/views/dashboard.blade.php
+index 696e93b..04c9fe4 100644
+--- a/resources/views/dashboard.blade.php
++++ b/resources/views/dashboard.blade.php
+@@ -25,7 +25,7 @@
+     </x-slot>
+ 
+     <x-slot name="actions">
+-        <button type="button" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-sm text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-900 transition-all">
++        <button type="button" onclick="toast('success', 'Laporan sedang disiapkan dan akan diunduh otomatis.', 'Export Dimulai')" class="inline-flex items-center justify-center px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium text-sm text-slate-700 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-offset-slate-900 transition-all">
+             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+             Export Laporan
+         </button>
+@@ -226,19 +226,99 @@
+                 </div>
+             </div>
+ 
++            <!-- Card 9: Produk Hampir Habis -->
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Produk Hampir Habis</p>
++                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">18</h4>
++                    </div>
++                    <div class="p-2.5 bg-danger-100 dark:bg-danger-900/30 text-danger-600 dark:text-danger-400 rounded-lg group-hover:scale-110 transition-transform">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
++                    </div>
++                </div>
++                <div class="mt-4 flex items-center text-sm">
++                    <a href="#produk-hampir-habis" class="flex items-center text-danger-600 dark:text-danger-400 font-medium bg-danger-50 dark:bg-danger-900/20 px-2 py-0.5 rounded-md hover:bg-danger-100 dark:hover:bg-danger-900/40 transition-colors">
++                        Perlu Restock
++                    </a>
++                    <span class="text-slate-400 ml-2">di bawah min. stok</span>
++                </div>
++            </div>
++
++            <!-- Card 10: Produk Terlaris -->
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Produk Terlaris</p>
++                        <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 truncate">Beras BMW 5Kg</h4>
++                    </div>
++                    <div class="p-2.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg group-hover:scale-110 transition-transform shrink-0">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
++                    </div>
++                </div>
++                <div class="mt-4 flex items-center text-sm">
++                    <span class="flex items-center text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20 px-2 py-0.5 rounded-md">
++                        1.250 pcs
++                    </span>
++                    <span class="text-slate-400 ml-2">bulan ini</span>
++                </div>
++            </div>
++
++            <!-- Card 11: Sales Terbaik -->
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Sales Terbaik</p>
++                        <h4 class="text-lg font-bold text-slate-800 dark:text-white mt-1 truncate">Dimas Prasetyo</h4>
++                    </div>
++                    <div class="p-2.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg group-hover:scale-110 transition-transform shrink-0">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
++                    </div>
++                </div>
++                <div class="mt-4 flex items-center text-sm">
++                    <span class="flex items-center text-purple-600 dark:text-purple-400 font-medium bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-md">
++                        Rp 350 Juta
++                    </span>
++                    <span class="text-slate-400 ml-2">omzet bulan ini</span>
++                </div>
++            </div>
++
++            <!-- Card 12: Pengiriman Hari Ini -->
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pengiriman Hari Ini</p>
++                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">14</h4>
++                    </div>
++                    <div class="p-2.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg group-hover:scale-110 transition-transform">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
++                    </div>
++                </div>
++                <div class="mt-4 flex items-center text-sm">
++                    <a href="#jadwal-pengiriman" class="flex items-center text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
++                        9 Dalam Perjalanan
++                    </a>
++                    <span class="text-slate-400 ml-2">5 selesai</span>
++                </div>
++            </div>
++
+         </div>
+ 
++
+         <!-- Charts Section -->
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <!-- Penjualan Harian -->
+-            <div class="glass-card p-5">
++            <div class="glass-card p-5" x-data="{ loading: true }" x-init="setTimeout(() => loading = false, 700)">
+                 <div class="flex justify-between items-center mb-4">
+                     <h3 class="text-lg font-bold text-slate-800 dark:text-white">Penjualan 7 Hari Terakhir</h3>
+-                    <button class="text-slate-400 hover:text-primary-600 transition-colors">
+-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
++                    <button @click="loading = true; setTimeout(() => { loading = false; toast('info', 'Grafik penjualan diperbarui.', 'Data Dimuat Ulang') }, 700)" class="text-slate-400 hover:text-primary-600 transition-colors" title="Muat ulang data">
++                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                     </button>
+                 </div>
+-                <div class="relative h-72 w-full">
++                <div x-show="loading" x-cloak>
++                    <x-loading-skeleton type="chart" class="!p-0 !shadow-none !border-0 !bg-transparent" />
++                </div>
++                <div x-show="!loading" x-cloak class="relative h-72 w-full">
+                     <canvas id="chartPenjualanHarian"></canvas>
+                 </div>
+             </div>
+@@ -246,7 +326,7 @@
+             <!-- Penjualan Bulanan -->
+             <div class="glass-card p-5">
+                 <div class="flex justify-between items-center mb-4">
+-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Trend Omzet 12 Bulan</h3>
++                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Penjualan Bulanan (12 Bulan)</h3>
+                     <button class="text-slate-400 hover:text-primary-600 transition-colors">
+                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                     </button>
+@@ -275,13 +355,25 @@
+                     <canvas id="chartSalesTerbaik"></canvas>
+                 </div>
+             </div>
++
++            <!-- Omzet Tahunan (Area Chart) -->
++            <div class="glass-card p-5 lg:col-span-2">
++                <div class="flex justify-between items-center mb-4">
++                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Omzet Tahunan</h3>
++                    <span class="text-xs font-medium text-slate-400 border border-slate-200 dark:border-slate-700 rounded-full px-2.5 py-1">Tahun {{ date('Y') }}</span>
++                </div>
++                <div class="relative h-72 w-full">
++                    <canvas id="chartOmzetTahunan"></canvas>
++                </div>
++            </div>
+         </div>
+ 
+         <!-- Tables Section -->
++
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             
+             <!-- Produk Hampir Habis -->
+-            <div class="glass-card overflow-hidden">
++            <div id="produk-hampir-habis" class="glass-card overflow-hidden scroll-mt-24">
+                 <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
+                     <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center">
+                         <svg class="w-5 h-5 text-warning-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+@@ -350,7 +442,7 @@
+             </div>
+ 
+             <!-- Pengiriman Hari Ini -->
+-            <div class="glass-card overflow-hidden">
++            <div id="jadwal-pengiriman" class="glass-card overflow-hidden scroll-mt-24">
+                 <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
+                     <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center">
+                         <svg class="w-5 h-5 text-primary-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+@@ -568,27 +660,21 @@
+                 }
+             });
+ 
+-            // 2. Penjualan Bulanan (Line Chart)
++            // 2. Penjualan Bulanan (Line Chart) - jumlah Sales Order per bulan
+             const ctxBulanan = document.getElementById('chartPenjualanBulanan').getContext('2d');
+-            
+-            // Gradient fill
+-            const gradientBulanan = ctxBulanan.createLinearGradient(0, 0, 0, 400);
+-            gradientBulanan.addColorStop(0, 'rgba(16, 185, 129, 0.5)');   
+-            gradientBulanan.addColorStop(1, 'rgba(16, 185, 129, 0)');
+-
+             new Chart(ctxBulanan, {
+                 type: 'line',
+                 data: {
+                     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
+                     datasets: [{
+-                        label: 'Omzet (Juta Rp)',
+-                        data: [850, 920, 880, 1100, 1050, 1200, 1150, 1300, 1450, 0, 0, 0],
+-                        borderColor: '#10b981',
+-                        backgroundColor: gradientBulanan,
++                        label: 'Jumlah SO',
++                        data: [95, 110, 102, 128, 121, 140, 133, 150, 168, 0, 0, 0],
++                        borderColor: '#3b82f6',
++                        backgroundColor: 'transparent',
+                         borderWidth: 3,
+                         tension: 0.4,
+-                        fill: true,
+-                        pointBackgroundColor: '#10b981',
++                        fill: false,
++                        pointBackgroundColor: '#3b82f6',
+                         pointBorderColor: '#fff',
+                         pointBorderWidth: 2,
+                         pointRadius: 4,
+@@ -664,7 +750,48 @@
+                     }
+                 }
+             });
+-            
++
++            // 5. Omzet Tahunan (Area Chart)
++            const ctxOmzet = document.getElementById('chartOmzetTahunan').getContext('2d');
++
++            // Gradient fill
++            const gradientOmzet = ctxOmzet.createLinearGradient(0, 0, 0, 400);
++            gradientOmzet.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
++            gradientOmzet.addColorStop(1, 'rgba(16, 185, 129, 0)');
++
++            new Chart(ctxOmzet, {
++                type: 'line',
++                data: {
++                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'],
++                    datasets: [{
++                        label: 'Omzet (Juta Rp)',
++                        data: [850, 920, 880, 1100, 1050, 1200, 1150, 1300, 1450, 0, 0, 0],
++                        borderColor: '#10b981',
++                        backgroundColor: gradientOmzet,
++                        borderWidth: 3,
++                        tension: 0.4,
++                        fill: true,
++                        pointBackgroundColor: '#10b981',
++                        pointBorderColor: '#fff',
++                        pointBorderWidth: 2,
++                        pointRadius: 4,
++                        pointHoverRadius: 6
++                    }]
++                },
++                options: {
++                    responsive: true,
++                    maintainAspectRatio: false,
++                    plugins: { legend: { display: false } },
++                    scales: {
++                        y: {
++                            beginAtZero: true,
++                            grid: { color: gridColor, drawBorder: false }
++                        },
++                        x: { grid: { display: false, drawBorder: false } }
++                    }
++                }
++            });
++
+             // Listen for dark mode toggle to update chart colors
+             window.addEventListener('storage', () => {
+                 // To be implemented: update chart config colors based on dark mode toggle
+diff --git a/resources/views/layouts/app.blade.php b/resources/views/layouts/app.blade.php
+index 57efe6a..b71c12d 100644
+--- a/resources/views/layouts/app.blade.php
++++ b/resources/views/layouts/app.blade.php
+@@ -51,7 +51,7 @@
+                 </a>
+ 
+                 <!-- Master Data -->
+-                <div x-data="{ open: false }" class="space-y-1">
++                <div x-data="{ open: {{ request()->routeIs('master-data.*') ? 'true' : 'false' }} }" class="space-y-1">
+                     <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-800/50 hover:text-white transition-all duration-200">
+                         <div class="flex items-center">
+                             <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+@@ -60,10 +60,10 @@
+                         <svg :class="{'rotate-90': open}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                     </button>
+                     <div x-show="open" x-transition.opacity class="pl-11 pr-4 py-2 space-y-2">
+-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Produk</a>
+-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Kategori</a>
+-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Supplier</a>
+-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Gudang</a>
++                        <a wire:navigate href="{{ route('master-data.products.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.products.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Produk</a>
++                        <a wire:navigate href="{{ route('master-data.categories.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.categories.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Kategori</a>
++                        <a wire:navigate href="{{ route('master-data.suppliers.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.suppliers.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Supplier</a>
++                        <a wire:navigate href="{{ route('master-data.warehouses.index') }}" class="block text-sm transition-colors {{ request()->routeIs('master-data.warehouses.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Gudang</a>
+                     </div>
+                 </div>
+ 
+@@ -342,6 +342,9 @@
+         </div>
+     </div>
+ 
++    <!-- Global Toast Notifications -->
++    <x-toast />
++
+     @livewireScripts
+ </body>
+ </html>
+diff --git a/resources/views/portal/dashboard.blade.php b/resources/views/portal/dashboard.blade.php
+index e9c81a6..21396fa 100644
+--- a/resources/views/portal/dashboard.blade.php
++++ b/resources/views/portal/dashboard.blade.php
+@@ -1,49 +1,143 @@
+-<!DOCTYPE html>
+-<html lang="en">
+-<head>
+-    <meta charset="utf-8">
+-    <meta name="viewport" content="width=device-width, initial-scale=1">
+-    <title>Portal Pelanggan - Sinar Wardana</title>
+-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+-</head>
+-<body class="min-h-screen bg-slate-50 text-slate-800">
+-    <div class="mx-auto max-w-7xl px-6 py-10">
+-        <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+-            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+-                <div>
+-                    <p class="text-sm font-semibold uppercase tracking-[0.24em] text-primary-600">Portal Pelanggan</p>
+-                    <h1 class="mt-2 text-3xl font-semibold text-slate-900">Selamat datang, {{ Auth::user()->name ?? 'Customer' }}</h1>
+-                    <p class="mt-3 max-w-2xl text-slate-600">Pantau pesanan, cek status pengiriman, dan temukan promo yang sedang berjalan dari satu tempat.</p>
++<x-portal-layout :title="'Dashboard'">
++    <x-slot name="header">
++        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
++            <div>
++                <p class="text-sm font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">Portal Pelanggan</p>
++                <h1 class="mt-1 text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Selamat datang, {{ Auth::user()->name ?? 'Pelanggan' }} 👋</h1>
++                <p class="mt-2 max-w-2xl text-slate-500 dark:text-slate-400">Pantau pesanan, cek status pengiriman, dan temukan promo yang sedang berjalan dari satu tempat.</p>
++            </div>
++            <div class="flex items-center gap-3">
++                <span class="inline-flex items-center gap-2 rounded-2xl bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 px-4 py-3 text-sm font-semibold text-success-700 dark:text-success-400">
++                    <span class="w-2 h-2 rounded-full bg-success-500 animate-pulse"></span>
++                    Akun Aktif
++                </span>
++                <button type="button" class="inline-flex items-center justify-center px-4 py-3 bg-primary-600 rounded-xl font-medium text-sm text-white shadow-sm shadow-primary-600/20 hover:bg-primary-700 transition-all">
++                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
++                    Buat Pesanan
++                </button>
++            </div>
++        </div>
++    </x-slot>
++
++    <div class="space-y-6">
++
++        <!-- Stat Cards -->
++        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pesanan Aktif</p>
++                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">3</h4>
++                    </div>
++                    <div class="p-2.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg group-hover:scale-110 transition-transform">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
++                    </div>
+                 </div>
+-                <div class="rounded-2xl bg-slate-900 px-5 py-4 text-white">
+-                    <p class="text-sm text-slate-300">Status akun</p>
+-                    <p class="mt-1 text-xl font-semibold">Aktif</p>
++                <p class="mt-4 text-sm text-slate-400">Sedang diproses gudang</p>
++            </div>
++
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Pengiriman Hari Ini</p>
++                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">2</h4>
++                    </div>
++                    <div class="p-2.5 bg-success-100 dark:bg-success-900/30 text-success-600 dark:text-success-400 rounded-lg group-hover:scale-110 transition-transform">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
++                    </div>
+                 </div>
++                <p class="mt-4 text-sm text-slate-400">Estimasi tiba sore ini</p>
+             </div>
+ 
+-            <div class="mt-8 grid gap-6 md:grid-cols-3">
+-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+-                    <p class="text-sm text-slate-500">Pesanan aktif</p>
+-                    <p class="mt-2 text-3xl font-semibold text-slate-900">3</p>
++            <div class="glass-card p-5 group hover:-translate-y-1 transition-all duration-300">
++                <div class="flex justify-between items-start">
++                    <div>
++                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Piutang Berjalan</p>
++                        <h4 class="text-2xl font-bold text-slate-800 dark:text-white mt-1">Rp 3.200.000</h4>
++                    </div>
++                    <div class="p-2.5 bg-warning-100 dark:bg-warning-900/30 text-warning-600 dark:text-warning-400 rounded-lg group-hover:scale-110 transition-transform">
++                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
++                    </div>
+                 </div>
+-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+-                    <p class="text-sm text-slate-500">Pengiriman hari ini</p>
+-                    <p class="mt-2 text-3xl font-semibold text-slate-900">2</p>
++                <p class="mt-4 text-sm text-slate-400">Jatuh tempo 12 hari lagi</p>
++            </div>
++        </div>
++
++        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
++
++            <!-- Pesanan Terbaru -->
++            <div class="lg:col-span-2 glass-card overflow-hidden">
++                <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white/50 dark:bg-slate-800/50">
++                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Pesanan Terbaru</h3>
++                    <a href="#" class="text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">Lihat Semua</a>
+                 </div>
+-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+-                    <p class="text-sm text-slate-500">Promo tersedia</p>
+-                    <p class="mt-2 text-3xl font-semibold text-slate-900">5</p>
++                <div class="divide-y divide-slate-100 dark:divide-slate-700/50">
++                    <div class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
++                        <div class="flex items-center gap-4">
++                            <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold text-sm">SO</div>
++                            <div>
++                                <p class="text-sm font-medium text-slate-800 dark:text-slate-200">SO-2309-135</p>
++                                <p class="text-xs text-slate-500">5 item &bull; 10 mnt lalu</p>
++                            </div>
++                        </div>
++                        <div class="text-right">
++                            <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Rp 4.500.000</p>
++                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Diproses</span>
++                        </div>
++                    </div>
++                    <div class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
++                        <div class="flex items-center gap-4">
++                            <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold text-sm">SO</div>
++                            <div>
++                                <p class="text-sm font-medium text-slate-800 dark:text-slate-200">SO-2309-121</p>
++                                <p class="text-xs text-slate-500">12 item &bull; Kemarin</p>
++                            </div>
++                        </div>
++                        <div class="text-right">
++                            <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Rp 9.750.000</p>
++                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400">Terkirim</span>
++                        </div>
++                    </div>
++                    <div class="flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
++                        <div class="flex items-center gap-4">
++                            <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center font-bold text-sm">SO</div>
++                            <div>
++                                <p class="text-sm font-medium text-slate-800 dark:text-slate-200">SO-2309-108</p>
++                                <p class="text-xs text-slate-500">8 item &bull; 3 hari lalu</p>
++                            </div>
++                        </div>
++                        <div class="text-right">
++                            <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Rp 2.100.000</p>
++                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400">Terkirim</span>
++                        </div>
++                    </div>
+                 </div>
+             </div>
+ 
+-            <div class="mt-8 flex flex-wrap gap-3">
+-                <a href="{{ route('dashboard') }}" class="rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">Ke dashboard admin</a>
+-                <form method="POST" action="{{ route('logout') }}" class="inline-flex">
+-                    @csrf
+-                    <button type="submit" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100">Keluar</button>
+-                </form>
++            <!-- Promo Aktif -->
++            <div class="glass-card overflow-hidden">
++                <div class="p-5 border-b border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50">
++                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center">
++                        <svg class="w-5 h-5 text-warning-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
++                        Promo Tersedia
++                    </h3>
++                </div>
++                <div class="p-4 space-y-3">
++                    <div class="rounded-xl border border-primary-100 dark:border-primary-900/40 bg-primary-50/60 dark:bg-primary-900/10 p-4">
++                        <p class="text-sm font-semibold text-primary-700 dark:text-primary-400">Diskon 10% Beras 5Kg</p>
++                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Berlaku s.d. 31 Agustus 2026</p>
++                    </div>
++                    <div class="rounded-xl border border-primary-100 dark:border-primary-900/40 bg-primary-50/60 dark:bg-primary-900/10 p-4">
++                        <p class="text-sm font-semibold text-primary-700 dark:text-primary-400">Beli 10 Dus Gratis 1</p>
++                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Khusus produk Indomie Goreng</p>
++                    </div>
++                    <a href="#" class="block text-center text-sm font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 pt-2">Lihat Semua Promo &rarr;</a>
++                </div>
+             </div>
+         </div>
++
++        <div class="flex flex-wrap gap-3">
++            <a href="{{ route('dashboard') }}" class="rounded-xl bg-slate-900 dark:bg-slate-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors">Ke dashboard admin</a>
++        </div>
+     </div>
+-</body>
+-</html>
++</x-portal-layout>
+diff --git a/routes/web.php b/routes/web.php
+index b6367e5..a832092 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -2,6 +2,11 @@
+ 
+ use App\Http\Controllers\DashboardController;
+ use App\Http\Controllers\PortalController;
++use App\Livewire\MasterData\CategoryManager;
++use App\Livewire\MasterData\ProductForm;
++use App\Livewire\MasterData\ProductManager;
++use App\Livewire\MasterData\SupplierManager;
++use App\Livewire\MasterData\WarehouseManager;
+ use Illuminate\Support\Facades\Route;
+ 
+ Route::view('/', 'welcome');
+@@ -9,6 +14,16 @@
+ Route::middleware(['auth', 'verified'])->group(function () {
+     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+     Route::get('/portal/dashboard', [PortalController::class, 'dashboard'])->name('portal.dashboard');
++
++    Route::prefix('master-data')->name('master-data.')->group(function () {
++        Route::get('/kategori', CategoryManager::class)->name('categories.index');
++        Route::get('/supplier', SupplierManager::class)->name('suppliers.index');
++        Route::get('/gudang', WarehouseManager::class)->name('warehouses.index');
++
++        Route::get('/produk', ProductManager::class)->name('products.index');
++        Route::get('/produk/tambah', ProductForm::class)->name('products.create');
++        Route::get('/produk/{product}/edit', ProductForm::class)->name('products.edit');
++    });
+ });
+ 
+ Route::view('profile', 'profile')
+diff --git a/tailwind.config.js b/tailwind.config.js
+index aa3454d..82e7c89 100644
+--- a/tailwind.config.js
++++ b/tailwind.config.js
+@@ -10,6 +10,18 @@ export default {
+         './resources/views/**/*.blade.php',
+     ],
+ 
++    // Kelas warna badge di bawah ini di-generate secara dinamis lewat interpolasi Blade
++    // (mis. bg-{{ $enum->color() }}-100), sehingga tidak terdeteksi oleh content scanner
++    // Tailwind di atas. Daftarkan manual di sini agar tidak ikut ter-purge saat build.
++    safelist: [
++        ...['blue', 'yellow', 'green', 'purple', 'red', 'indigo', 'orange', 'teal', 'slate'].flatMap((color) => [
++            `bg-${color}-100`,
++            `text-${color}-800`,
++            `dark:bg-${color}-900/30`,
++            `dark:text-${color}-400`,
++        ]),
++    ],
++
+     theme: {
+         extend: {
+             fontFamily: {

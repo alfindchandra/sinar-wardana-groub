@@ -10,6 +10,18 @@ export default {
         './resources/views/**/*.blade.php',
     ],
 
+    // Kelas warna badge di bawah ini di-generate secara dinamis lewat interpolasi Blade
+    // (mis. bg-{{ $enum->color() }}-100), sehingga tidak terdeteksi oleh content scanner
+    // Tailwind di atas. Daftarkan manual di sini agar tidak ikut ter-purge saat build.
+    safelist: [
+        ...['blue', 'yellow', 'green', 'purple', 'red', 'indigo', 'orange', 'teal', 'slate'].flatMap((color) => [
+            `bg-${color}-100`,
+            `text-${color}-800`,
+            `dark:bg-${color}-900/30`,
+            `dark:text-${color}-400`,
+        ]),
+    ],
+
     theme: {
         extend: {
             fontFamily: {

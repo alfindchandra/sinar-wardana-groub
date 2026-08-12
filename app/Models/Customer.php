@@ -78,9 +78,11 @@ class Customer extends Model
 
     public function scopeSearch($query, $term)
     {
-        return $query->where('store_name', 'like', "%{$term}%")
-                     ->orWhere('owner_name', 'like', "%{$term}%")
-                     ->orWhere('code', 'like', "%{$term}%");
+        return $query->where(function ($q) use ($term) {
+            $q->where('store_name', 'like', "%{$term}%")
+                ->orWhere('owner_name', 'like', "%{$term}%")
+                ->orWhere('code', 'like', "%{$term}%");
+        });
     }
 
     public function getFormattedCreditLimitAttribute()

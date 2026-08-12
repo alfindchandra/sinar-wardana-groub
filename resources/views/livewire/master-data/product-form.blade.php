@@ -148,25 +148,55 @@
 
             <!-- Breakdown Otomatis -->
             <div class="glass-card p-6 space-y-5">
-                <div>
-                    <h3 class="text-base font-bold text-slate-800 dark:text-white">Breakdown Harga Otomatis (Info Saja)</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        Isi rasio Bal &amp; Pcs untuk menampilkan estimasi harga pecahan di halaman produk.
-                        Pelanggan tetap checkout per {{ \App\Enums\ProductUnit::from($unit)->label() }} — Bal/Pcs <strong>tidak bisa dibeli terpisah</strong>.
-                    </p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="flex items-start justify-between gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Isi Bal per {{ \App\Enums\ProductUnit::from($unit)->label() }}</label>
-                        <input type="number" min="1" wire:model.live="content_per_bal" placeholder="Contoh: 8" class="block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
-                        @error('content_per_bal') <p class="mt-1.5 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
+                        <h3 class="text-base font-bold text-slate-800 dark:text-white">Breakdown Harga Otomatis (Info Saja)</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Tambahkan level breakdown sesuai kebutuhan — pilih sendiri satuan (Dus/Bal/Pcs/dst) &amp; jumlahnya per level, berurutan dari atas ke bawah.
+                            Pelanggan tetap checkout per {{ \App\Enums\ProductUnit::from($unit)->label() }} — level di bawah ini <strong>tidak bisa dibeli terpisah</strong>.
+                        </p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Isi Pcs per Bal</label>
-                        <input type="number" min="1" wire:model.live="pcs_per_bal" placeholder="Contoh: 20" class="block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
-                        @error('pcs_per_bal') <p class="mt-1.5 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
-                    </div>
+                    <button type="button" wire:click="addBreakdown" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-primary-600 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors shrink-0">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Level
+                    </button>
                 </div>
+
+                @if (count($priceBreakdowns) === 0)
+                    <div class="text-center py-8 text-slate-400">
+                        <svg class="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 7h6m0 10v-3m-3 3.75V15m-3 4.25V17M4 7h16M4 7v10a2 2 0 002 2h12a2 2 0 002-2V7M4 7l2-3h12l2 3"></path></svg>
+                        <p class="text-sm">Belum ada breakdown. Klik "Tambah Level" kalau ingin menampilkan estimasi harga per Bal/Pcs/dll.</p>
+                    </div>
+                @else
+                    <div class="space-y-3">
+                        @foreach ($priceBreakdowns as $index => $row)
+                            <div class="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700" wire:key="breakdown-{{ $index }}">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                        Satuan {{ $index === 0 ? '(level ke-1)' : '(di dalam ' . (\App\Enums\BreakdownUnit::tryFrom($priceBreakdowns[$index - 1]['unit'] ?? '')?->label() ?? 'level sebelumnya') . ')' }}
+                                    </label>
+                                    <select wire:model.live="priceBreakdowns.{{ $index }}.unit" class="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+                                        <option value="">-- Pilih Satuan --</option>
+                                        @foreach ($breakdownUnits as $bu)
+                                            <option value="{{ $bu->value }}">{{ $bu->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error("priceBreakdowns.{$index}.unit") <p class="mt-1 text-[11px] text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Jumlah</label>
+                                    <input type="number" min="1" wire:model.live="priceBreakdowns.{{ $index }}.qty" placeholder="Contoh: 8" class="block w-full rounded-lg border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-xs focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500">
+                                    @error("priceBreakdowns.{$index}.qty") <p class="mt-1 text-[11px] text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
+                                </div>
+                                <div>
+                                    <button type="button" wire:click="removeBreakdown({{ $index }})" class="p-2 text-slate-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/20 rounded-lg transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 @if ($this->breakdownPreview)
                     <div class="rounded-xl border border-primary-100 dark:border-primary-900/40 bg-primary-50/60 dark:bg-primary-900/10 p-4">

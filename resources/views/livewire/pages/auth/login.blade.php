@@ -22,7 +22,11 @@ new #[Layout('layouts.guest')] class extends Component
         Session::regenerate();
 
         $user = Auth::user();
-        $default = $user->hasRole('pelanggan') ? route('shop.home', absolute: false) : route('dashboard', absolute: false);
+        $default = match (true) {
+            $user->hasRole('pelanggan') => route('shop.home', absolute: false),
+            $user->hasRole('sales') => route('sales.dashboard', absolute: false),
+            default => route('dashboard', absolute: false),
+        };
 
         $this->redirectIntended(default: $default, navigate: true);
     }

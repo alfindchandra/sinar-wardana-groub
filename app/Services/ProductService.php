@@ -36,7 +36,7 @@ class ProductService
     }
 
     /**
-     * @param  array  $data  Field produk (name, sku, sell_price, content_per_bal, pcs_per_bal, dst)
+     * @param  array  $data  Field produk (name, sku, sell_price, price_breakdowns, dst)
      * @param  UploadedFile[]  $images  File gambar baru yang diupload
      * @param  array  $warehouseStocks  [['warehouse_id' => 1, 'stock' => 10, 'min_stock' => 5], ...]
      * @param  array  $variants  [['name' => 'Ungu', 'extra_price' => 0, 'stock' => 10, 'is_active' => true], ...]

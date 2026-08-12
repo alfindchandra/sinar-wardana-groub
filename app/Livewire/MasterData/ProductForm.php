@@ -2,6 +2,7 @@
 
 namespace App\Livewire\MasterData;
 
+use App\Enums\BreakdownUnit;
 use App\Enums\ProductUnit;
 use App\Http\Requests\ProductRequest;
 use App\Models\Category;
@@ -11,6 +12,7 @@ use App\Models\Warehouse;
 use App\Services\ProductService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -39,9 +41,13 @@ class ProductForm extends Component
     public int $min_stock = 0;
     public bool $is_active = true;
 
-    // Breakdown harga otomatis (Sak -> Bal -> Pcs), untuk tampilan/deskripsi saja
-    public ?int $content_per_bal = null;
-    public ?int $pcs_per_bal = null;
+    /**
+     * Breakdown harga otomatis, untuk tampilan/deskripsi saja (info, bukan satuan yang dijual).
+     * Admin bebas menambah level & memilih satuannya sendiri, contoh:
+     * [['unit' => 'bal', 'qty' => 8], ['unit' => 'pcs', 'qty' => 20]]
+     * artinya: 1 Dus = 8 Bal, lalu 1 Bal = 20 Pcs.
+     */
+    public array $priceBreakdowns = [];
 
     // Gambar
     public array $newImages = [];
@@ -83,8 +89,7 @@ class ProductForm extends Component
         $this->supplier_id = $product->supplier_id;
         $this->unit = $product->unit;
         $this->weight = $product->weight ? (float) $product->weight : null;
-        $this->content_per_bal = $product->content_per_bal;
-        $this->pcs_per_bal = $product->pcs_per_bal;
+        $this->priceBreakdowns = $product->price_breakdowns ?? [];
         $this->description = $product->description;
         $this->min_purchase = $product->min_purchase;
         $this->base_cost = (float) $product->base_cost;
@@ -144,6 +149,20 @@ class ProductForm extends Component
         $this->variants = array_values($this->variants);
     }
 
+    public function addBreakdown(): void
+    {
+        $this->priceBreakdowns[] = [
+            'unit' => '',
+            'qty' => null,
+        ];
+    }
+
+    public function removeBreakdown(int $index): void
+    {
+        unset($this->priceBreakdowns[$index]);
+        $this->priceBreakdowns = array_values($this->priceBreakdowns);
+    }
+
     public function removeNewImage(int $index): void
     {
         unset($this->newImages[$index]);
@@ -183,37 +202,51 @@ class ProductForm extends Component
             'name' => 'nama produk',
             'category_id' => 'kategori',
             'sell_price' => 'Harga Jual (Umum)',
-            'content_per_bal' => 'isi Bal',
-            'pcs_per_bal' => 'isi Pcs per Bal',
         ];
     }
 
     /**
-     * Preview breakdown harga live saat admin mengetik (dipakai di tab Harga).
+     * Preview breakdown harga live saat admin mengetik/memilih satuan (dipakai di tab Harga).
+     * Menghitung berjenjang lewat semua baris yang sudah diisi, urut dari atas ke bawah.
      */
     public function getBreakdownPreviewProperty(): ?string
     {
-        if (! $this->content_per_bal || $this->content_per_bal <= 0 || $this->sell_price <= 0) {
+        if ($this->sell_price <= 0) {
             return null;
         }
 
-        $balPrice = $this->sell_price / $this->content_per_bal;
-        $unitLabel = ProductUnit::from($this->unit)->label();
+        $rows = collect($this->priceBreakdowns)
+            ->filter(fn ($row) => ! empty($row['unit']) && (int) ($row['qty'] ?? 0) > 0)
+            ->values();
 
-        $text = sprintf(
-            'Isi 1 %s = %d Bal (Rp %s/bal)',
-            $unitLabel,
-            $this->content_per_bal,
-            number_format($balPrice, 0, ',', '.')
-        );
-
-        if ($this->pcs_per_bal && $this->pcs_per_bal > 0) {
-            $pcsPrice = $balPrice / $this->pcs_per_bal;
-            $totalPcs = $this->content_per_bal * $this->pcs_per_bal;
-            $text .= sprintf(' | Total %d Pcs (Rp %s/pcs)', $totalPcs, number_format($pcsPrice, 0, ',', '.'));
+        if ($rows->isEmpty()) {
+            return null;
         }
 
-        return $text;
+        $unitLabel = ProductUnit::from($this->unit)->label();
+        $previousLabel = $unitLabel;
+        $cumulativeQty = 1;
+        $parts = [];
+
+        foreach ($rows as $row) {
+            $qty = (int) $row['qty'];
+            $rowUnitLabel = BreakdownUnit::tryFrom($row['unit'])?->label() ?? ucfirst($row['unit']);
+            $cumulativeQty *= $qty;
+            $price = $this->sell_price / $cumulativeQty;
+
+            $parts[] = sprintf(
+                'Isi 1 %s = %d %s (Rp %s/%s)',
+                $previousLabel,
+                $qty,
+                $rowUnitLabel,
+                number_format($price, 0, ',', '.'),
+                strtolower($rowUnitLabel)
+            );
+
+            $previousLabel = $rowUnitLabel;
+        }
+
+        return implode(' | ', $parts);
     }
 
     public function save()
@@ -225,10 +258,22 @@ class ProductForm extends Component
             'variants.*.name' => ['nullable', 'string', 'max:100'],
             'variants.*.extra_price' => ['nullable', 'numeric'],
             'variants.*.stock' => ['nullable', 'integer', 'min:0'],
+            'priceBreakdowns.*.unit' => ['nullable', Rule::in(BreakdownUnit::getValues())],
+            'priceBreakdowns.*.qty' => ['nullable', 'integer', 'min:1'],
+        ], [], [
+            'priceBreakdowns.*.unit' => 'satuan breakdown',
+            'priceBreakdowns.*.qty' => 'jumlah breakdown',
         ]);
 
         $variants = collect($this->variants)
             ->filter(fn ($v) => ! empty($v['name']))
+            ->values()
+            ->toArray();
+
+        // Hanya simpan baris breakdown yang benar-benar terisi lengkap (satuan + jumlah).
+        $data['price_breakdowns'] = collect($this->priceBreakdowns)
+            ->filter(fn ($row) => ! empty($row['unit']) && (int) ($row['qty'] ?? 0) > 0)
+            ->map(fn ($row) => ['unit' => $row['unit'], 'qty' => (int) $row['qty']])
             ->values()
             ->toArray();
 
@@ -266,6 +311,7 @@ class ProductForm extends Component
             'categories' => Category::active()->ordered()->get(),
             'suppliers' => Supplier::active()->orderBy('name')->get(),
             'units' => ProductUnit::cases(),
+            'breakdownUnits' => BreakdownUnit::cases(),
         ]);
     }
 }

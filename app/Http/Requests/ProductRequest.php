@@ -41,8 +41,6 @@ class ProductRequest extends FormRequest
             'supplier_id' => ['nullable', 'exists:suppliers,id'],
             'unit' => ['required', Rule::in(ProductUnit::getValues())],
             'weight' => ['nullable', 'numeric', 'min:0'],
-            'content_per_bal' => ['nullable', 'integer', 'min:1'],
-            'pcs_per_bal' => ['nullable', 'integer', 'min:1'],
             'description' => ['nullable', 'string', 'max:2000'],
             'min_purchase' => ['required', 'integer', 'min:1'],
             'base_cost' => ['required', 'numeric', 'min:0'],

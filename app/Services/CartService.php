@@ -16,6 +16,14 @@ class CartService
 {
     protected const SESSION_KEY = 'cart';
 
+    /**
+     * Simpan data keranjang ke session.
+     */
+    protected function save(array $cart): void
+    {
+        Session::put(self::SESSION_KEY, $cart);
+    }
+
     protected function key(int $productId, int $variantId = 0): string
     {
         return "{$productId}-{$variantId}";

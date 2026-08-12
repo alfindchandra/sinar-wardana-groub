@@ -15,7 +15,7 @@ class Product extends Model
 
     protected $fillable = [
         'barcode', 'sku', 'name', 'slug', 'brand', 'category_id', 'supplier_id', 'unit',
-        'weight', 'content_per_bal', 'pcs_per_bal', 'description', 'min_purchase',
+        'weight', 'price_breakdowns', 'description', 'min_purchase',
         'base_cost', 'sell_price', 'min_stock', 'is_active',
     ];
 
@@ -25,8 +25,7 @@ class Product extends Model
         'sell_price' => 'decimal:2',
         'min_purchase' => 'integer',
         'min_stock' => 'integer',
-        'content_per_bal' => 'integer',
-        'pcs_per_bal' => 'integer',
+        'price_breakdowns' => 'array',
         'is_active' => 'boolean',
     ];
 
@@ -134,84 +133,86 @@ class Product extends Model
     }
 
     /**
-     * Estimasi harga per Bal, dihitung otomatis dari harga Sak/Dus dibagi isi Bal.
-     * Hanya untuk tampilan/deskripsi — TIDAK bisa dibeli terpisah.
+     * Hitung breakdown harga bertingkat (jumlah level bebas, satuan bebas — mis. Dus -> Bal -> Pcs).
+     * Hanya untuk tampilan/info — TIDAK bisa dibeli terpisah per level.
+     *
+     * Mengembalikan array berisi, untuk tiap level:
+     * - unit / unit_label : satuan level ini (mis. "bal" / "Bal")
+     * - qty                : isi level ini di dalam 1 level sebelumnya (mis. 8)
+     * - cumulative_qty     : total isi level ini di dalam 1 satuan utama produk (mis. 8, lalu 160)
+     * - price              : estimasi harga per level ini (sell_price dibagi cumulative_qty)
      */
-    public function pricePerBal(): ?float
+    public function breakdownSteps(): array
     {
-        if (! $this->content_per_bal || $this->content_per_bal <= 0) {
-            return null;
+        $steps = $this->price_breakdowns ?? [];
+
+        if (empty($steps) || (float) $this->sell_price <= 0) {
+            return [];
         }
 
-        return (float) $this->sell_price / $this->content_per_bal;
+        $result = [];
+        $cumulativeQty = 1;
+
+        foreach ($steps as $step) {
+            $qty = (int) ($step['qty'] ?? 0);
+            $unit = $step['unit'] ?? null;
+
+            if ($qty <= 0 || ! $unit) {
+                continue;
+            }
+
+            $cumulativeQty *= $qty;
+
+            $result[] = [
+                'unit' => $unit,
+                'unit_label' => \App\Enums\BreakdownUnit::tryFrom($unit)?->label() ?? ucfirst($unit),
+                'qty' => $qty,
+                'cumulative_qty' => $cumulativeQty,
+                'price' => (float) $this->sell_price / $cumulativeQty,
+            ];
+        }
+
+        return $result;
     }
 
     /**
-     * Estimasi harga per Pcs, dihitung otomatis dari harga per Bal dibagi isi Pcs per Bal.
-     * Hanya untuk tampilan/deskripsi — TIDAK bisa dibeli terpisah.
-     */
-    public function pricePerPcs(): ?float
-    {
-        $balPrice = $this->pricePerBal();
-
-        if ($balPrice === null || ! $this->pcs_per_bal || $this->pcs_per_bal <= 0) {
-            return null;
-        }
-
-        return $balPrice / $this->pcs_per_bal;
-    }
-
-    /**
-     * Total Pcs dalam 1 Sak/Dus (isi Bal x isi Pcs per Bal).
-     */
-    public function totalPcs(): ?int
-    {
-        if (! $this->content_per_bal || ! $this->pcs_per_bal) {
-            return null;
-        }
-
-        return $this->content_per_bal * $this->pcs_per_bal;
-    }
-
-    /**
-     * Apakah produk ini punya data breakdown Bal/Pcs untuk ditampilkan.
+     * Apakah produk ini punya data breakdown untuk ditampilkan.
      */
     public function hasBreakdown(): bool
     {
-        return $this->pricePerBal() !== null;
+        return count($this->breakdownSteps()) > 0;
     }
 
     /**
      * Teks ringkas breakdown harga untuk ditampilkan di deskripsi produk, mis:
-     * "Isi 1 Sak = 8 Bal (Rp 39.313/bal) | Total 160 Pcs (Rp 1.966/pcs)"
+     * "Isi 1 Dus = 8 Bal (Rp 39.313/bal) | 1 Bal = 20 Pcs, Total 160 Pcs (Rp 1.966/pcs)"
      */
     public function breakdownDescription(): ?string
     {
-        if (! $this->hasBreakdown()) {
+        $steps = $this->breakdownSteps();
+
+        if (empty($steps)) {
             return null;
         }
 
         $unitLabel = \App\Enums\ProductUnit::from($this->unit)->label();
-        $balPrice = $this->pricePerBal();
-        $pcsPrice = $this->pricePerPcs();
-        $totalPcs = $this->totalPcs();
+        $parts = [];
+        $previousLabel = $unitLabel;
 
-        $text = sprintf(
-            'Isi 1 %s = %d Bal (Rp %s/bal)',
-            $unitLabel,
-            $this->content_per_bal,
-            number_format($balPrice, 0, ',', '.')
-        );
-
-        if ($pcsPrice !== null && $totalPcs !== null) {
-            $text .= sprintf(
-                ' | Total %d Pcs (Rp %s/pcs)',
-                $totalPcs,
-                number_format($pcsPrice, 0, ',', '.')
+        foreach ($steps as $step) {
+            $parts[] = sprintf(
+                'Isi 1 %s = %d %s (Rp %s/%s)',
+                $previousLabel,
+                $step['qty'],
+                $step['unit_label'],
+                number_format($step['price'], 0, ',', '.'),
+                strtolower($step['unit_label'])
             );
+
+            $previousLabel = $step['unit_label'];
         }
 
-        return $text;
+        return implode(' | ', $parts);
     }
 
     protected static function boot()

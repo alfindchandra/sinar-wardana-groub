@@ -6,6 +6,7 @@ use App\Models\Category;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CategoryManager extends Component
 {
@@ -31,11 +32,25 @@ class CategoryManager extends Component
     public function rules()
     {
         return [
-            'name' => 'required|string|max:255',
+            // Nama harus unik (dicek termasuk kategori yang sudah dihapus/soft-deleted)
+            // supaya tidak terjadi bentrok slug saat insert ke database.
+            // Catatan: Rule::unique() bekerja langsung di level tabel, jadi otomatis
+            // ikut memeriksa baris yang sudah soft-deleted (tidak perlu withTrashed()).
+            'name' => [
+                'required', 'string', 'max:255',
+                Rule::unique('categories', 'name')->ignore($this->categoryId),
+            ],
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:255',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
+        ];
+    }
+
+    protected function messages()
+    {
+        return [
+            'name.unique' => 'Nama kategori ini sudah dipakai (mungkin oleh kategori yang sudah dihapus). Gunakan nama lain.',
         ];
     }
 
@@ -88,18 +103,43 @@ class CategoryManager extends Component
             'is_active' => $this->is_active,
         ];
 
-        if ($this->isEdit) {
-            $category = Category::findOrFail($this->categoryId);
-            $category->update($data);
-            $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Kategori berhasil diperbarui.']);
-        } else {
-            $data['slug'] = Str::slug($this->name);
-            Category::create($data);
-            $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Kategori berhasil ditambahkan.']);
+        try {
+            if ($this->isEdit) {
+                $category = Category::findOrFail($this->categoryId);
+                $category->update($data);
+                $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Kategori berhasil diperbarui.']);
+            } else {
+                $data['slug'] = $this->uniqueSlug($this->name);
+                Category::create($data);
+                $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Kategori berhasil ditambahkan.']);
+            }
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // Jaring pengaman terakhir kalau tetap ada bentrok slug (mis. klik simpan dobel-cepat).
+            $this->addError('name', 'Nama kategori ini sudah dipakai. Gunakan nama lain.');
+            return;
         }
 
         $this->showModal = false;
         $this->resetForm();
+    }
+
+    /**
+     * Buat slug unik dari nama kategori. Kalau slug dasar sudah dipakai
+     * (termasuk oleh kategori yang sudah di-soft-delete), tambahkan angka
+     * di belakang (mis. "kopi-teh-2") sampai ketemu yang unik.
+     */
+    protected function uniqueSlug(string $name): string
+    {
+        $base = Str::slug($name);
+        $slug = $base;
+        $i = 2;
+
+        while (Category::withTrashed()->where('slug', $slug)->exists()) {
+            $slug = $base . '-' . $i;
+            $i++;
+        }
+
+        return $slug;
     }
 
     public function triggerDelete($id)

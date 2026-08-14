@@ -9,7 +9,7 @@ trait EnsuresSalesPerson
 {
     public ?SalesPerson $salesPerson = null;
 
-    protected function bootEnsuresSalesPerson(): void
+    public function bootEnsuresSalesPerson(): void
     {
         $person = Auth::user()?->salesPerson;
 

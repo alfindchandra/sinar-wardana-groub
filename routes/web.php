@@ -7,10 +7,10 @@ use App\Livewire\MasterData\ProductForm;
 use App\Livewire\MasterData\ProductManager;
 use App\Livewire\MasterData\SupplierManager;
 use App\Livewire\MasterData\WarehouseManager;
-use App\Livewire\Admin\OnlineOrderManager;
-use App\Livewire\Admin\OnlineOrderShow;
-use App\Livewire\Portal\MyOrders;
-use App\Livewire\Portal\OrderShow as PortalOrderShow;
+// use App\Livewire\Admin\OnlineOrderManager;
+// use App\Livewire\Admin\OnlineOrderShow;
+// use App\Livewire\Portal\MyOrders;
+// use App\Livewire\Portal\OrderShow as PortalOrderShow;
 use App\Livewire\Sales\Dashboard as SalesDashboard;
 use App\Livewire\Sales\MyTargets;
 use App\Livewire\Sales\Profile as SalesProfile;
@@ -41,15 +41,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/portal/dashboard', [PortalController::class, 'dashboard'])->name('portal.dashboard');
 
-    Route::prefix('portal')->name('portal.')->group(function () {
-        Route::get('/pesanan', MyOrders::class)->name('orders.index');
-        Route::get('/pesanan/{order}', PortalOrderShow::class)->name('orders.show');
-    });
+    // Route::prefix('portal')->name('portal.')->group(function () {
+    //     Route::get('/pesanan', MyOrders::class)->name('orders.index');
+    //     Route::get('/pesanan/{order}', PortalOrderShow::class)->name('orders.show');
+    // });
 
-    Route::prefix('penjualan')->name('online-orders.')->group(function () {
-        Route::get('/pesanan-online', OnlineOrderManager::class)->name('index');
-        Route::get('/pesanan-online/{order}', OnlineOrderShow::class)->name('show');
-    });
+    // Route::prefix('penjualan')->name('online-orders.')->group(function () {
+    //     Route::get('/pesanan-online', OnlineOrderManager::class)->name('index');
+    //     Route::get('/pesanan-online/{order}', OnlineOrderShow::class)->name('show');
+    // });
 
     Route::prefix('sales')->name('sales.')->group(function () {
         Route::get('/', SalesDashboard::class)->name('dashboard');

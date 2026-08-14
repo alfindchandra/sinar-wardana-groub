@@ -121,20 +121,20 @@
                     </div>
                 </div>
 
-                <!-- Sales -->
-                <div x-data="{ open: false }" class="space-y-1">
+                <!-- Sales & Toko -->
+                <div x-data="{ open: {{ request()->routeIs('admin.stores.*') || request()->routeIs('admin.sales-orders.*') || request()->routeIs('admin.sales-targets.*') ? 'true' : 'false' }} }" class="space-y-1">
                     <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-800/50 hover:text-white transition-all duration-200">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                            Sales
+                            Sales & Toko
                         </div>
                         <svg :class="{'rotate-90': open}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                     <div x-show="open" x-transition.opacity class="pl-11 pr-4 py-2 space-y-2">
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Data Sales</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Kunjungan</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Target</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Komisi</a>
+                        <a wire:navigate href="{{ route('admin.stores.index') }}" class="block text-sm transition-colors {{ request()->routeIs('admin.stores.index') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Daftar Toko</a>
+                        <a wire:navigate href="{{ route('admin.stores.map') }}" class="block text-sm transition-colors {{ request()->routeIs('admin.stores.map') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Peta Toko</a>
+                        <a wire:navigate href="{{ route('admin.sales-orders.index') }}" class="block text-sm transition-colors {{ request()->routeIs('admin.sales-orders.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Orderan Sales</a>
+                        <a wire:navigate href="{{ route('admin.sales-targets.index') }}" class="block text-sm transition-colors {{ request()->routeIs('admin.sales-targets.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Target Omset</a>
                     </div>
                 </div>
 

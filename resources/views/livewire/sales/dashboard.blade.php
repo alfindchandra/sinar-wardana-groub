@@ -14,40 +14,52 @@
         <div class="glass-card p-4">
             <div class="flex items-center gap-2 mb-1">
                 <div class="p-1.5 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </div>
                 <span class="text-[11px] text-slate-400">Hari Ini</span>
             </div>
-            <p class="text-xl font-bold text-slate-800 dark:text-white">{{ $todayVisits->count() }}</p>
-            <p class="text-[11px] text-slate-400">Kunjungan</p>
+            <p class="text-xl font-bold text-slate-800 dark:text-white">{{ $todayOrders->count() }}</p>
+            <p class="text-[11px] text-slate-400">Orderan</p>
         </div>
 
         <div class="glass-card p-4">
             <div class="flex items-center gap-2 mb-1">
                 <div class="p-1.5 bg-success-100 dark:bg-success-900/30 text-success-600 dark:text-success-400 rounded-lg">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <span class="text-[11px] text-slate-400">Bulan Ini</span>
             </div>
-            <p class="text-xl font-bold text-slate-800 dark:text-white">{{ $visitsThisMonth }}</p>
-            <p class="text-[11px] text-slate-400">Total Kunjungan</p>
+            <p class="text-lg font-bold text-slate-800 dark:text-white">Rp {{ number_format($omsetThisMonth, 0, ',', '.') }}</p>
+            <p class="text-[11px] text-slate-400">Omset</p>
         </div>
 
-        <div class="glass-card p-4 col-span-2">
+        <div class="glass-card p-4">
+            <div class="flex items-center gap-2 mb-1">
+                <div class="p-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <span class="text-[11px] text-slate-400">Toko</span>
+            </div>
+            <p class="text-xl font-bold text-slate-800 dark:text-white">{{ $totalStores }}</p>
+            <p class="text-[11px] text-slate-400">Total Toko</p>
+        </div>
+
+        <div class="glass-card p-4">
             <div class="flex items-center gap-2 mb-1">
                 <div class="p-1.5 bg-warning-100 dark:bg-warning-900/30 text-warning-600 dark:text-warning-400 rounded-lg">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3v-6m-3 6v-9m-2 9h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2z"></path></svg>
                 </div>
-                <span class="text-[11px] text-slate-400">Komisi Bulan Ini</span>
+                <span class="text-[11px] text-slate-400">Komisi</span>
             </div>
-            <p class="text-xl font-bold text-slate-800 dark:text-white">Rp {{ number_format($commissionThisMonth, 0, ',', '.') }}</p>
+            <p class="text-lg font-bold text-slate-800 dark:text-white">Rp {{ number_format($commissionThisMonth, 0, ',', '.') }}</p>
+            <p class="text-[11px] text-slate-400">Bulan Ini</p>
         </div>
     </div>
 
     <!-- Target Progress -->
     <div class="glass-card p-5">
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Target Bulan Ini</h3>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Target Omset Bulan Ini</h3>
             <a href="{{ route('sales.targets') }}" wire:navigate class="text-xs font-medium text-primary-600 dark:text-primary-400">Detail &rarr;</a>
         </div>
 
@@ -58,7 +70,7 @@
                     <svg class="w-20 h-20 -rotate-90">
                         <circle cx="40" cy="40" r="34" stroke-width="7" fill="none" class="text-slate-100 dark:text-slate-800" stroke="currentColor"></circle>
                         <circle cx="40" cy="40" r="34" stroke-width="7" fill="none" stroke-linecap="round"
-                            class="text-primary-600 dark:text-primary-400" stroke="currentColor"
+                            class="{{ $pct >= 100 ? 'text-success-500' : 'text-primary-600 dark:text-primary-400' }}" stroke="currentColor"
                             stroke-dasharray="213.6" stroke-dashoffset="{{ 213.6 - (213.6 * $pct / 100) }}"></circle>
                     </svg>
                     <div class="absolute inset-0 flex items-center justify-center">
@@ -77,49 +89,72 @@
                 </div>
             </div>
         @else
-            <p class="text-sm text-slate-400 text-center py-4">Belum ada target untuk bulan ini.</p>
+            <p class="text-sm text-slate-400 text-center py-4">Belum ada target omset untuk bulan ini.</p>
         @endif
     </div>
 
-    <!-- Quick Action -->
-    <a href="{{ route('sales.visits.checkin') }}" wire:navigate class="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-600/20 active:scale-[0.98] transition-transform">
-        <div class="p-2.5 bg-white/15 rounded-xl">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </div>
-        <div class="flex-1">
-            <p class="text-sm font-bold">Check-in Kunjungan Baru</p>
-            <p class="text-xs text-primary-100">Catat kunjungan ke toko pelanggan</p>
-        </div>
-        <svg class="w-5 h-5 text-primary-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-    </a>
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 gap-3">
+        <a href="{{ route('sales.orders.create') }}" wire:navigate class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-600/20 active:scale-[0.98] transition-transform">
+            <div class="p-2.5 bg-white/15 rounded-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <span class="text-xs font-bold">Buat Order</span>
+        </a>
+        <a href="{{ route('sales.stores.register') }}" wire:navigate class="flex flex-col items-center gap-2 p-4 rounded-2xl bg-gradient-to-br from-success-600 to-success-700 text-white shadow-lg shadow-success-600/20 active:scale-[0.98] transition-transform">
+            <div class="p-2.5 bg-white/15 rounded-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            </div>
+            <span class="text-xs font-bold">Daftar Toko</span>
+        </a>
+    </div>
 
-    <!-- Kunjungan Hari Ini -->
+    <!-- Orderan Hari Ini -->
     <div>
         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Kunjungan Hari Ini</h3>
-            <a href="{{ route('sales.visits.index') }}" wire:navigate class="text-xs font-medium text-primary-600 dark:text-primary-400">Lihat Semua &rarr;</a>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Orderan Hari Ini</h3>
+            <a href="{{ route('sales.orders.index') }}" wire:navigate class="text-xs font-medium text-primary-600 dark:text-primary-400">Lihat Semua &rarr;</a>
         </div>
 
-        @if ($todayVisits->isEmpty())
+        @if ($todayOrders->isEmpty())
             <div class="glass-card p-6 text-center">
-                <svg class="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <p class="text-sm text-slate-400">Belum ada kunjungan hari ini</p>
+                <svg class="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <p class="text-sm text-slate-400">Belum ada orderan hari ini</p>
             </div>
         @else
             <div class="space-y-2.5">
-                @foreach ($todayVisits->take(4) as $visit)
-                    <div class="glass-card p-3.5 flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 {{ $visit->check_out_time ? 'bg-success-100 dark:bg-success-900/30 text-success-600 dark:text-success-400' : 'bg-warning-100 dark:bg-warning-900/30 text-warning-600 dark:text-warning-400' }}">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
-                        </div>
+                @foreach ($todayOrders->take(5) as $order)
+                    <a href="{{ route('sales.orders.show', $order) }}" wire:navigate class="glass-card p-3.5 flex items-center gap-3 block active:bg-slate-50 dark:active:bg-slate-800/50 transition-colors">
+                        @if ($order->customer?->store_photo)
+                            <img src="{{ Storage::url($order->customer->store_photo) }}" class="w-10 h-10 rounded-lg object-cover shrink-0">
+                        @else
+                            <div class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                            </div>
+                        @endif
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ $visit->customer?->store_name ?? 'Kunjungan Umum' }}</p>
-                            <p class="text-[11px] text-slate-400">{{ $visit->check_in_time?->format('H:i') }} @if($visit->check_out_time) &ndash; {{ $visit->check_out_time->format('H:i') }} @endif</p>
+                            <p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{{ $order->customer?->store_name ?? '-' }}</p>
+                            <p class="text-[11px] text-slate-400">{{ $order->so_number }} &middot; Rp {{ number_format($order->grand_total, 0, ',', '.') }}</p>
                         </div>
-                        <span class="text-[10px] font-semibold px-2 py-1 rounded-full {{ $visit->check_out_time ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400' : 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400' }}">
-                            {{ $visit->check_out_time ? 'Selesai' : 'Berlangsung' }}
+                        <span class="text-[10px] font-semibold px-2 py-1 rounded-full shrink-0 {{ match($order->status) {
+                            'completed' => 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
+                            'confirmed' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                            'processing' => 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
+                            'shipped' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                            'cancelled' => 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
+                            default => 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+                        } }}">
+                            {{ match($order->status) {
+                                'draft' => 'Draft',
+                                'confirmed' => 'Dikonfirmasi',
+                                'processing' => 'Diproses',
+                                'shipped' => 'Dikirim',
+                                'completed' => 'Selesai',
+                                'cancelled' => 'Dibatalkan',
+                                default => ucfirst($order->status),
+                            } }}
                         </span>
-                    </div>
+                    </a>
                 @endforeach
             </div>
         @endif

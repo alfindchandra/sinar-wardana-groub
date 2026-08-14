@@ -4,8 +4,8 @@ namespace App\Livewire\Sales;
 
 use App\Livewire\Sales\Concerns\EnsuresSalesPerson;
 use App\Models\SalesCommission;
+use App\Models\SalesOrder;
 use App\Models\SalesTarget;
-use App\Models\SalesVisit;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -21,10 +21,10 @@ class Dashboard extends Component
 
     public function render()
     {
-        $todayVisits = SalesVisit::where('sales_person_id', $this->salesPerson->id)
-            ->today()
-            ->with('customer:id,store_name,owner_name')
-            ->orderByDesc('check_in_time')
+        $todayOrders = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+            ->whereDate('order_date', now()->toDateString())
+            ->with('customer:id,store_name,store_photo')
+            ->orderByDesc('created_at')
             ->get();
 
         $target = SalesTarget::where('sales_person_id', $this->salesPerson->id)
@@ -36,16 +36,26 @@ class Dashboard extends Component
             ->byPeriod(now()->month, now()->year)
             ->sum('amount');
 
-        $visitsThisMonth = SalesVisit::where('sales_person_id', $this->salesPerson->id)
-            ->whereMonth('visit_date', now()->month)
-            ->whereYear('visit_date', now()->year)
+        $omsetThisMonth = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+            ->whereMonth('order_date', now()->month)
+            ->whereYear('order_date', now()->year)
+            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'completed'])
+            ->sum('grand_total');
+
+        $ordersThisMonth = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+            ->whereMonth('order_date', now()->month)
+            ->whereYear('order_date', now()->year)
             ->count();
 
+        $totalStores = $this->salesPerson->customers()->active()->count();
+
         return view('livewire.sales.dashboard', [
-            'todayVisits' => $todayVisits,
+            'todayOrders' => $todayOrders,
             'target' => $target,
             'commissionThisMonth' => $commissionThisMonth,
-            'visitsThisMonth' => $visitsThisMonth,
+            'omsetThisMonth' => $omsetThisMonth,
+            'ordersThisMonth' => $ordersThisMonth,
+            'totalStores' => $totalStores,
         ]);
     }
 }

@@ -7,16 +7,19 @@ use App\Livewire\MasterData\ProductForm;
 use App\Livewire\MasterData\ProductManager;
 use App\Livewire\MasterData\SupplierManager;
 use App\Livewire\MasterData\WarehouseManager;
-// use App\Livewire\Admin\OnlineOrderManager;
-// use App\Livewire\Admin\OnlineOrderShow;
-// use App\Livewire\Portal\MyOrders;
-// use App\Livewire\Portal\OrderShow as PortalOrderShow;
+use App\Livewire\Admin\SalesOrderManager;
+use App\Livewire\Admin\SalesTargetManager;
+use App\Livewire\Admin\StoreManager;
+use App\Livewire\Admin\StoreMap;
+use App\Livewire\Sales\CreateOrder;
 use App\Livewire\Sales\Dashboard as SalesDashboard;
 use App\Livewire\Sales\MyTargets;
+use App\Livewire\Sales\OrderDetail;
+use App\Livewire\Sales\OrderList;
 use App\Livewire\Sales\Profile as SalesProfile;
-use App\Livewire\Sales\VisitCheckIn;
-use App\Livewire\Sales\VisitList;
-use App\Livewire\Sales\VisitShow;
+use App\Livewire\Sales\StoreDetail;
+use App\Livewire\Sales\StoreList;
+use App\Livewire\Sales\StoreRegister;
 use App\Livewire\Shop\CartPage;
 use App\Livewire\Shop\Checkout;
 use App\Livewire\Shop\Home as ShopHome;
@@ -41,25 +44,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/portal/dashboard', [PortalController::class, 'dashboard'])->name('portal.dashboard');
 
-    // Route::prefix('portal')->name('portal.')->group(function () {
-    //     Route::get('/pesanan', MyOrders::class)->name('orders.index');
-    //     Route::get('/pesanan/{order}', PortalOrderShow::class)->name('orders.show');
-    // });
-
-    // Route::prefix('penjualan')->name('online-orders.')->group(function () {
-    //     Route::get('/pesanan-online', OnlineOrderManager::class)->name('index');
-    //     Route::get('/pesanan-online/{order}', OnlineOrderShow::class)->name('show');
-    // });
-
+    // ==== Sales App (Mobile) ====
     Route::prefix('sales')->name('sales.')->group(function () {
         Route::get('/', SalesDashboard::class)->name('dashboard');
-        Route::get('/kunjungan', VisitList::class)->name('visits.index');
-        Route::get('/kunjungan/checkin', VisitCheckIn::class)->name('visits.checkin');
-        Route::get('/kunjungan/{visit}', VisitShow::class)->name('visits.show');
+
+        // Toko
+        Route::get('/toko', StoreList::class)->name('stores.index');
+        Route::get('/toko/daftar', StoreRegister::class)->name('stores.register');
+        Route::get('/toko/{customer}', StoreDetail::class)->name('stores.show');
+
+        // Order
+        Route::get('/order', OrderList::class)->name('orders.index');
+        Route::get('/order/baru/{customer?}', CreateOrder::class)->name('orders.create');
+        Route::get('/order/{salesOrder}', OrderDetail::class)->name('orders.show');
+
+        // Target & Profil
         Route::get('/target', MyTargets::class)->name('targets');
         Route::get('/profil', SalesProfile::class)->name('profile');
     });
 
+    // ==== Admin Panel ====
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/toko', StoreManager::class)->name('stores.index');
+        Route::get('/toko/peta', StoreMap::class)->name('stores.map');
+        Route::get('/orderan-sales', SalesOrderManager::class)->name('sales-orders.index');
+        Route::get('/target-sales', SalesTargetManager::class)->name('sales-targets.index');
+    });
+
+    // ==== Master Data ====
     Route::prefix('master-data')->name('master-data.')->group(function () {
         Route::get('/kategori', CategoryManager::class)->name('categories.index');
         Route::get('/supplier', SupplierManager::class)->name('suppliers.index');

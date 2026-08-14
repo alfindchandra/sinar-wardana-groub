@@ -2,7 +2,7 @@
 
     <!-- Target Bulan Ini (besar) -->
     <div class="glass-card p-5">
-        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-4">Target {{ now()->translatedFormat('F Y') }}</h3>
+        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-4">Target Omset {{ now()->translatedFormat('F Y') }}</h3>
 
         @if ($currentTarget)
             @php $pct = min(100, $currentTarget->achievement_percentage); @endphp
@@ -22,22 +22,38 @@
             </div>
             <div class="grid grid-cols-2 gap-3 text-center">
                 <div class="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3">
-                    <p class="text-[11px] text-slate-400">Tercapai</p>
+                    <p class="text-[11px] text-slate-400">Omset Tercapai</p>
                     <p class="text-sm font-bold text-slate-800 dark:text-white mt-0.5">Rp {{ number_format($currentTarget->achieved_amount, 0, ',', '.') }}</p>
                 </div>
                 <div class="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-3">
-                    <p class="text-[11px] text-slate-400">Target</p>
+                    <p class="text-[11px] text-slate-400">Target Omset</p>
                     <p class="text-sm font-bold text-slate-800 dark:text-white mt-0.5">Rp {{ number_format($currentTarget->target_amount, 0, ',', '.') }}</p>
                 </div>
             </div>
         @else
-            <p class="text-sm text-slate-400 text-center py-6">Belum ada target untuk bulan ini.</p>
+            <p class="text-sm text-slate-400 text-center py-6">Belum ada target omset untuk bulan ini.</p>
         @endif
+    </div>
+
+    <!-- Ringkasan Omset Bulanan -->
+    <div>
+        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-3">Ringkasan Omset (6 Bulan Terakhir)</h3>
+        <div class="space-y-2">
+            @foreach ($omsetSummary as $month)
+                <div class="glass-card p-3.5 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $month['label'] }}</p>
+                        <p class="text-[11px] text-slate-400">{{ $month['orders'] }} orderan</p>
+                    </div>
+                    <p class="text-sm font-bold text-slate-800 dark:text-white">Rp {{ number_format($month['omset'], 0, ',', '.') }}</p>
+                </div>
+            @endforeach
+        </div>
     </div>
 
     <!-- Riwayat Target -->
     <div>
-        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-3">Riwayat Target</h3>
+        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-3">Riwayat Target Omset</h3>
         @if ($targets->isEmpty())
             <div class="glass-card p-6 text-center text-sm text-slate-400">Belum ada riwayat target.</div>
         @else

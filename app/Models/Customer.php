@@ -10,7 +10,7 @@ class Customer extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'user_id', 'code', 'store_name', 'owner_name', 'phone', 'email', 'address', 'city', 'province', 'postal_code', 'latitude', 'longitude', 'area', 'sales_person_id', 'credit_limit', 'payment_term_days', 'customer_type', 'notes', 'is_active'
+        'user_id', 'code', 'store_name', 'owner_name', 'phone', 'email', 'address', 'city', 'province', 'postal_code', 'store_photo', 'latitude', 'longitude', 'area', 'sales_person_id', 'credit_limit', 'payment_term_days', 'customer_type', 'notes', 'is_active'
     ];
 
     protected $casts = [

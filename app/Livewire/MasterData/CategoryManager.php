@@ -5,12 +5,14 @@ namespace App\Livewire\MasterData;
 use App\Models\Category;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class CategoryManager extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     public $search = '';
     public $sortField = 'sort_order';
@@ -23,7 +25,8 @@ class CategoryManager extends Component
     // Form fields
     public $name = '';
     public $description = '';
-    public $icon = '';
+    public $icon = '';         // Menyimpan path SVG atau class FontAwesome
+    public $svg_file;          // Temporary file upload untuk SVG
     public $sort_order = 0;
     public $is_active = true;
 
@@ -32,15 +35,12 @@ class CategoryManager extends Component
     public function rules()
     {
         return [
-            // Nama harus unik (dicek termasuk kategori yang sudah dihapus/soft-deleted)
-            // supaya tidak terjadi bentrok slug saat insert ke database.
-            // Catatan: Rule::unique() bekerja langsung di level tabel, jadi otomatis
-            // ikut memeriksa baris yang sudah soft-deleted (tidak perlu withTrashed()).
             'name' => [
                 'required', 'string', 'max:255',
                 Rule::unique('categories', 'name')->ignore($this->categoryId),
             ],
             'description' => 'nullable|string',
+            'svg_file' => 'nullable|file|mimes:svg,xml|max:1024', // Maks 1MB
             'icon' => 'nullable|string|max:255',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
@@ -50,7 +50,9 @@ class CategoryManager extends Component
     protected function messages()
     {
         return [
-            'name.unique' => 'Nama kategori ini sudah dipakai (mungkin oleh kategori yang sudah dihapus). Gunakan nama lain.',
+            'name.unique' => 'Nama kategori ini sudah dipakai. Gunakan nama lain.',
+            'svg_file.mimes' => 'File harus berformat SVG.',
+            'svg_file.max' => 'Ukuran file SVG maksimal 1MB.',
         ];
     }
 
@@ -85,7 +87,7 @@ class CategoryManager extends Component
         $this->description = $category->description;
         $this->icon = $category->icon;
         $this->sort_order = $category->sort_order;
-        $this->is_active = $category->is_active;
+        $this->is_active = (bool) $category->is_active;
         
         $this->isEdit = true;
         $this->showModal = true;
@@ -95,10 +97,23 @@ class CategoryManager extends Component
     {
         $this->validate();
 
+        $iconPath = $this->icon;
+
+        // Proses upload file SVG jika ada file baru diunggah
+        if ($this->svg_file) {
+            // Hapus file SVG lama jika sedang mengedit
+            if ($this->isEdit && $this->icon && str_starts_with($this->icon, 'categories/')) {
+                Storage::disk('public')->delete($this->icon);
+            }
+
+            // Simpan SVG baru ke storage/app/public/categories
+            $iconPath = $this->svg_file->store('categories', 'public');
+        }
+
         $data = [
             'name' => $this->name,
             'description' => $this->description,
-            'icon' => $this->icon,
+            'icon' => $iconPath,
             'sort_order' => (int) $this->sort_order,
             'is_active' => $this->is_active,
         ];
@@ -114,7 +129,6 @@ class CategoryManager extends Component
                 $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Kategori berhasil ditambahkan.']);
             }
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-            // Jaring pengaman terakhir kalau tetap ada bentrok slug (mis. klik simpan dobel-cepat).
             $this->addError('name', 'Nama kategori ini sudah dipakai. Gunakan nama lain.');
             return;
         }
@@ -123,11 +137,6 @@ class CategoryManager extends Component
         $this->resetForm();
     }
 
-    /**
-     * Buat slug unik dari nama kategori. Kalau slug dasar sudah dipakai
-     * (termasuk oleh kategori yang sudah di-soft-delete), tambahkan angka
-     * di belakang (mis. "kopi-teh-2") sampai ketemu yang unik.
-     */
     protected function uniqueSlug(string $name): string
     {
         $base = Str::slug($name);
@@ -142,6 +151,15 @@ class CategoryManager extends Component
         return $slug;
     }
 
+    public function removeIcon()
+    {
+        if ($this->icon && str_starts_with($this->icon, 'categories/')) {
+            Storage::disk('public')->delete($this->icon);
+        }
+        $this->icon = null;
+        $this->svg_file = null;
+    }
+
     public function triggerDelete($id)
     {
         $this->dispatch('swal:confirm', [
@@ -153,13 +171,20 @@ class CategoryManager extends Component
 
     public function delete($id)
     {
-        Category::findOrFail($id)->delete();
+        $category = Category::findOrFail($id);
+        
+        // Hapus file SVG dari storage jika ada
+        if ($category->icon && str_starts_with($category->icon, 'categories/')) {
+            Storage::disk('public')->delete($category->icon);
+        }
+
+        $category->delete();
         $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Kategori berhasil dihapus.']);
     }
 
     public function resetForm()
     {
-        $this->reset(['name', 'description', 'icon', 'sort_order', 'is_active', 'categoryId']);
+        $this->reset(['name', 'description', 'icon', 'svg_file', 'sort_order', 'is_active', 'categoryId']);
         $this->resetValidation();
     }
 

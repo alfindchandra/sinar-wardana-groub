@@ -12,8 +12,8 @@ use Livewire\Form;
 
 class LoginForm extends Form
 {
-    #[Validate('required|string|email')]
-    public string $email = '';
+    #[Validate('required|string')]
+    public string $phone = '';
 
     #[Validate('required|string')]
     public string $password = '';
@@ -24,19 +24,36 @@ class LoginForm extends Form
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws ValidationException
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function authenticate(): void
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only(['email', 'password']), $this->remember)) {
-            RateLimiter::hit($this->throttleKey());
+        // Normalisasi format nomor HP (jika input diawali +62 atau 08)
+        $cleanPhone = preg_replace('/[^0-9]/', '', $this->phone);
 
-            throw ValidationException::withMessages([
-                'form.email' => trans('auth.failed'),
-            ]);
+        // Autentikasi dengan nomor HP dan verifikasi status akun aktif
+        $credentials = [
+            'phone' => $cleanPhone,
+            'password' => $this->password,
+            'is_active' => true,
+        ];
+
+        if (! Auth::attempt($credentials, $this->remember)) {
+            // Coba fallback dengan nomor asli jika pembersihan angka berbeda
+            if (! Auth::attempt(['phone' => $this->phone, 'password' => $this->password, 'is_active' => true], $this->remember)) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'form.phone' => __('No. WhatsApp / HP atau password salah, atau akun Anda nonaktif.'),
+                ]);
+            }
         }
+
+        // Catat waktu login terakhir
+        $user = Auth::user();
+        $user->update(['last_login_at' => now()]);
 
         RateLimiter::clear($this->throttleKey());
     }
@@ -55,7 +72,7 @@ class LoginForm extends Form
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'form.email' => trans('auth.throttle', [
+            'form.phone' => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -67,6 +84,6 @@ class LoginForm extends Form
      */
     protected function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->email).'|'.request()->ip());
+        return Str::transliterate(Str::lower($this->phone).'|'.request()->ip());
     }
 }

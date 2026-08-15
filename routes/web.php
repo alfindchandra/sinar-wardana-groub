@@ -25,6 +25,7 @@ use App\Livewire\Shop\CartPage;
 use App\Livewire\Shop\Checkout;
 use App\Livewire\Shop\Home as ShopHome;
 use App\Livewire\Shop\OrderSuccess;
+use App\Livewire\Shop\RegisterPartner;
 use App\Livewire\Shop\ProductCatalog;
 use App\Livewire\Shop\ProductDetail;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,8 @@ Route::get('/', ShopHome::class)->name('shop.home');
 Route::get('/produk', ProductCatalog::class)->name('shop.products');
 Route::get('/produk/{product}', ProductDetail::class)->name('shop.products.show');
 Route::get('/keranjang', CartPage::class)->name('shop.cart');
+Route::get('/daftar-mitra', RegisterPartner::class)->name('shop.register-partner');
+
 
 // ==== Checkout & Order (butuh login sebagai pelanggan) ====
 Route::middleware(['auth'])->group(function () {

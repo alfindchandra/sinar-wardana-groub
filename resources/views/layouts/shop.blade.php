@@ -30,11 +30,7 @@
 
                 <!-- Logo -->
                 <a href="{{ route('shop.home') }}" class="flex items-center gap-2.5 shrink-0">
-                    <div class="p-2 bg-primary-600 rounded-lg shadow-lg shadow-primary-600/30">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                    </div>
+                        <img src="{{ asset('images/logo.png') }}" class="w-14 h-8" alt="Sinar Wardana">
                     <span class="text-lg font-bold tracking-wide text-slate-800 dark:text-white hidden sm:block">Sinar Wardana</span>
                 </a>
 
@@ -93,7 +89,7 @@
                         </div>
                     @else
                         <a href="{{ route('login') }}" class="hidden sm:inline-flex items-center px-3.5 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Masuk</a>
-                        <a href="{{ route('register') }}" class="inline-flex items-center px-4 py-2 bg-primary-600 rounded-xl text-sm font-medium text-white shadow-sm shadow-primary-600/20 hover:bg-primary-700 transition-all">Daftar</a>
+                        <a href="{{ route('shop.register-partner') }}" class="inline-flex items-center px-4 py-2 bg-primary-600 rounded-xl text-sm font-medium text-white shadow-sm shadow-primary-600/20 hover:bg-primary-700 transition-all">Daftar</a>
                     @endauth
 
                     <!-- Mobile menu -->
@@ -145,11 +141,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center gap-2.5 mb-3">
-                        <div class="p-2 bg-primary-600 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                        </div>
+                        
                         <span class="text-lg font-bold text-white">Sinar Wardana</span>
                     </div>
                     <p class="text-sm text-slate-400">Distributor &amp; grosir sembako terpercaya. Melayani toko, agen, dan distributor di seluruh Indonesia.</p>
@@ -175,8 +167,8 @@
                 <div>
                     <h4 class="text-sm font-bold text-white mb-3">Hubungi Kami</h4>
                     <ul class="space-y-2 text-sm text-slate-400">
-                        <li>0812-3456-7890</li>
-                        <li>halo@sinarwardana.co.id</li>
+                        <li>0813-8217-6161</li>
+                        
                     </ul>
                 </div>
             </div>

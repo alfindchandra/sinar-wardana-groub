@@ -11,10 +11,10 @@
     </x-slot>
 
     <x-slot name="actions">
-    <button @click="$wire.create()" type="button" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        Tambah Kategori
-    </button>
+        <button @click="$wire.create()" type="button" class="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors shadow-lg shadow-primary-600/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Tambah Kategori
+        </button>
     </x-slot>
 
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
@@ -43,8 +43,16 @@
                     <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                         <td class="p-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center">
-                                    <i class="{{ $category->icon ?: 'fas fa-folder' }}"></i>
+                                <div class="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 text-primary-600 flex items-center justify-center overflow-hidden shrink-0">
+                                    @if ($category->icon && (str_starts_with($category->icon, 'categories/') || str_ends_with($category->icon, '.svg')))
+                                        <img src="{{ asset('storage/' . $category->icon) }}" alt="{{ $category->name }}" class="w-6 h-6 object-contain">
+                                    @elseif ($category->icon)
+                                        <i class="{{ $category->icon }}"></i>
+                                    @else
+                                        <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
+                                        </svg>
+                                    @endif
                                 </div>
                                 <span class="font-medium text-slate-800 dark:text-slate-200">{{ $category->name }}</span>
                             </div>
@@ -86,52 +94,95 @@
     </div>
 
     <!-- Modal Form -->
-    <div x-data="{ show: @entangle('showModal') }" x-show="show" class="fixed inset-0 z-50 flex items-center justify-center" style="display: none;">
+    <div x-data="{ show: @entangle('showModal') }" x-show="show" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
         <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" @click="show = false"></div>
         
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md z-10 border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md z-10 border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100">{{ $isEdit ? 'Edit Kategori' : 'Tambah Kategori' }}</h3>
-                <button @click="show = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button @click="show = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
             
-            <form wire:submit.prevent="save" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+            <form wire:submit.prevent="save" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <!-- Nama Kategori -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nama Kategori <span class="text-danger-500">*</span></label>
                     <input wire:model="name" type="text" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-primary-500 focus:border-primary-500">
                     @error('name') <span class="text-xs text-danger-500 mt-1">{{ $message }}</span> @enderror
                 </div>
 
+                <!-- Deskripsi -->
                 <div>
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Deskripsi</label>
-                    <textarea wire:model="description" rows="3" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-primary-500 focus:border-primary-500"></textarea>
+                    <textarea wire:model="description" rows="2" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-primary-500 focus:border-primary-500"></textarea>
                     @error('description') <span class="text-xs text-danger-500 mt-1">{{ $message }}</span> @enderror
                 </div>
                 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ikon (Class)</label>
-                        <input wire:model="icon" type="text" placeholder="fas fa-folder" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-primary-500 focus:border-primary-500">
-                        @error('icon') <span class="text-xs text-danger-500 mt-1">{{ $message }}</span> @enderror
+                <!-- Upload Ikon SVG -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Ikon Kategori (SVG)</label>
+                    
+                    <div class="flex items-center gap-3">
+                        <!-- Preview Box -->
+                        <div class="w-14 h-14 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 flex items-center justify-center shrink-0 overflow-hidden relative group">
+                            @if ($svg_file)
+                                <img src="{{ $svg_file->temporaryUrl() }}" class="w-8 h-8 object-contain">
+                            @elseif ($icon && (str_starts_with($icon, 'categories/') || str_ends_with($icon, '.svg')))
+                                <img src="{{ asset('storage/' . $icon) }}" class="w-8 h-8 object-contain">
+                            @elseif ($icon)
+                                <i class="{{ $icon }} text-lg text-primary-600"></i>
+                            @else
+                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            @endif
+                        </div>
+
+                        <!-- File Input -->
+                        <div class="flex-1">
+                            <input 
+                                type="file" 
+                                wire:model="svg_file" 
+                                accept=".svg,image/svg+xml" 
+                                class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-900/30 dark:file:text-primary-400 cursor-pointer"
+                            >
+                            <span class="text-[11px] text-slate-400 mt-1 block">Format .svg, maks 1MB</span>
+                        </div>
                     </div>
+
+                    <!-- Loading Indicator saat upload -->
+                    <div wire:loading wire:target="svg_file" class="text-xs text-primary-600 mt-1">
+                        Mengunggah file SVG...
+                    </div>
+
+                    @error('svg_file') <span class="text-xs text-danger-500 mt-1 block">{{ $message }}</span> @enderror
+                </div>
+
+                <!-- Urutan & Status -->
+                <div class="grid grid-cols-2 gap-4 items-center">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Urutan</label>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Urutan Tampil</label>
                         <input wire:model="sort_order" type="number" class="w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-primary-500 focus:border-primary-500">
                         @error('sort_order') <span class="text-xs text-danger-500 mt-1">{{ $message }}</span> @enderror
                     </div>
-                </div>
 
-                <div>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input wire:model="is_active" type="checkbox" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500">
-                        <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Aktif</span>
-                    </label>
+                    <div class="pt-5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input wire:model="is_active" type="checkbox" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500">
+                            <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Status Aktif</span>
+                        </label>
+                    </div>
                 </div>
             </form>
             
-            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-xl">
+            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/50 rounded-b-2xl">
                 <button type="button" @click="show = false" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">Batal</button>
-                <button wire:click="save" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors shadow-lg shadow-primary-600/20">Simpan</button>
+                <button wire:click="save" wire:loading.attr="disabled" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors shadow-lg shadow-primary-600/20 disabled:opacity-50">
+                    <span wire:loading.remove wire:target="save,svg_file">Simpan</span>
+                    <span wire:loading wire:target="save,svg_file">Menyimpan...</span>
+                </button>
             </div>
         </div>
     </div>

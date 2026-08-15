@@ -54,8 +54,8 @@
             <svg class="w-4.5 h-4.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
             <span class="text-sm font-medium text-slate-700 dark:text-slate-300">Mode Gelap</span>
         </div>
-        <button @click="darkMode = !darkMode" type="button" :class="darkMode ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
-            <span :class="darkMode ? 'translate-x-6' : 'translate-x-1'" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
+        <button @click="$store.theme.toggle()" type="button" :class="$store.theme.dark ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-700'" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors">
+            <span :class="$store.theme.dark ? 'translate-x-6' : 'translate-x-1'" class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
         </button>
     </div>
 

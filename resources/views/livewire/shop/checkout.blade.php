@@ -12,7 +12,41 @@
 
     <h1 class="text-2xl font-bold text-slate-800 dark:text-white mb-6">Checkout</h1>
 
-    @if (! $customer)
+    @if ($this->isSales() && ! $this->selectedCustomer)
+        <!-- Alur Sales: cari & pilih toko binaan sebelum checkout -->
+        <div class="glass-card p-6 max-w-xl">
+            <h3 class="text-base font-bold text-slate-800 dark:text-white mb-1">Pilih Toko</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">Cari toko binaan Anda untuk melanjutkan order ini.</p>
+
+            <div class="relative">
+                <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
+                <input type="text" wire:model.live.debounce.300ms="customerSearch" placeholder="Cari nama toko..."
+                    class="block w-full pl-10 pr-4 py-2.5 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
+            </div>
+
+            @if (strlen($customerSearch) >= 2)
+                <div class="mt-2 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 max-h-56 overflow-y-auto">
+                    @forelse ($this->customers as $cust)
+                        <button type="button" wire:click="selectCustomer({{ $cust->id }})" class="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex justify-between items-center">
+                            <div>
+                                <div class="font-medium text-slate-900 dark:text-white text-sm">{{ $cust->store_name }}</div>
+                                <div class="text-xs text-slate-500">{{ $cust->code }} @if($cust->area)&middot; {{ $cust->area }}@endif</div>
+                            </div>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 4.5l7.5 7.5-7.5 7.5"></path></svg>
+                        </button>
+                    @empty
+                        <div class="px-4 py-3 text-sm text-center text-slate-500">Tidak ditemukan</div>
+                    @endforelse
+                </div>
+
+                <a href="{{ route('sales.stores.register', ['redirect' => 'checkout', 'search' => $customerSearch]) }}" wire:navigate
+                    class="mt-2 flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-dashed border-primary-300 dark:border-primary-700 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"></path></svg>
+                    Toko belum terdaftar? Daftarkan Toko Baru
+                </a>
+            @endif
+        </div>
+    @elseif (! $this->isSales() && ! $customer)
         <!-- Lengkapi Profil Toko -->
         <div class="glass-card p-6 max-w-xl">
             <h3 class="text-base font-bold text-slate-800 dark:text-white mb-1">Lengkapi Profil Toko Anda</h3>
@@ -61,16 +95,59 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div class="lg:col-span-2 space-y-6">
-                <!-- Alamat Pengiriman -->
-                <div class="glass-card p-5">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-bold text-slate-800 dark:text-white">Alamat Pengiriman</h3>
-                        <a href="{{ route('portal.dashboard') }}" class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400">Kelola Profil</a>
+                @if ($this->isSales())
+                    <!-- Toko Terpilih (khusus sales) -->
+                    <div class="glass-card p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Toko</h3>
+                            <button type="button" wire:click="clearCustomer" class="text-xs font-medium text-danger-600 hover:text-danger-700">Ganti Toko</button>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $this->selectedCustomer->store_name }} ({{ $this->selectedCustomer->owner_name }})</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ $this->selectedCustomer->phone }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $this->selectedCustomer->address }}, {{ $this->selectedCustomer->city }}</p>
                     </div>
-                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $customer->store_name }} ({{ $customer->owner_name }})</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ $customer->phone }}</p>
-                    <p class="text-sm text-slate-500 dark:text-slate-400">{{ $customer->address }}, {{ $customer->city }}</p>
-                </div>
+
+                    <!-- Detail Order (khusus sales) -->
+                    <div class="glass-card p-5">
+                        <h3 class="text-sm font-bold text-slate-800 dark:text-white mb-3">Detail Order</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Gudang <span class="text-danger-500">*</span></label>
+                                <select wire:model="warehouse_id" class="block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
+                                    <option value="">Pilih Gudang...</option>
+                                    @foreach ($this->warehouses as $wh)
+                                        <option value="{{ $wh->id }}">{{ $wh->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('warehouse_id') <p class="mt-1.5 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Tipe Pembayaran <span class="text-danger-500">*</span></label>
+                                <div class="flex items-center gap-4 h-10">
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                        <input type="radio" wire:model="payment_type" value="cash" class="text-primary-600 focus:ring-primary-500">
+                                        Tunai
+                                    </label>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                        <input type="radio" wire:model="payment_type" value="tempo" class="text-primary-600 focus:ring-primary-500">
+                                        Kredit (Tempo)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <!-- Alamat Pengiriman -->
+                    <div class="glass-card p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-white">Alamat Pengiriman</h3>
+                            <a href="{{ route('portal.dashboard') }}" class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400">Kelola Profil</a>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300">{{ $customer->store_name }} ({{ $customer->owner_name }})</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ $customer->phone }}</p>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">{{ $customer->address }}, {{ $customer->city }}</p>
+                    </div>
+                @endif
 
                 <!-- Items -->
                 <div class="glass-card overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -125,9 +202,11 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                     </svg>
-                    Buat Pesanan
+                    {{ $this->isSales() ? 'Simpan Order Toko' : 'Buat Pesanan' }}
                 </button>
-                <p class="text-xs text-slate-400 mt-3 text-center">Pesanan akan dikonfirmasi oleh tim kami sebelum diproses.</p>
+                <p class="text-xs text-slate-400 mt-3 text-center">
+                    {{ $this->isSales() ? 'Order akan otomatis tersimpan atas nama toko yang dipilih.' : 'Pesanan akan dikonfirmasi oleh tim kami sebelum diproses.' }}
+                </p>
             </div>
         </div>
     @endif

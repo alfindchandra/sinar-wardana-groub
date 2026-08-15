@@ -36,7 +36,7 @@ class OrderList extends Component
 
     public function render()
     {
-        $this->ensureSalesPersonExists();
+        // Baris $this->ensureSalesPersonExists(); DIHAPUS
 
         $query = SalesOrder::with('customer')
             ->where('sales_person_id', $this->salesPerson->id);

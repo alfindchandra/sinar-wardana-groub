@@ -31,10 +31,17 @@
     </a>
 
     <div class="p-3.5 flex flex-col flex-1">
-        <p class="text-[11px] text-slate-400 uppercase tracking-wide mb-0.5">{{ $product->category->name ?? '' }}</p>
-        <a href="{{ route('shop.products.show', $product) }}" wire:navigate class="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 hover:text-primary-600 dark:hover:text-primary-400 transition-colors min-h-[2.5rem]">
+        <a href="{{ route('shop.products.show', $product) }}" wire:navigate class="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-2 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
             {{ $product->name }}
         </a>
+        @if ($product->brand)
+            <p class="text-[11px] text-slate-400 uppercase tracking-wide mb-0.5">
+                {{ $product->brand }}
+            </p>
+        @endif
+        
+
+        
 
         <div class="mt-2 flex items-baseline gap-1.5">
             <span class="text-base font-bold text-primary-600 dark:text-primary-400">Rp {{ number_format($price, 0, ',', '.') }}</span>

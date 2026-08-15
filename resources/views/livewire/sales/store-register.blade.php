@@ -2,6 +2,7 @@
     <div class="px-4 py-4">
         <form wire:submit="save" class="space-y-4">
             
+            <!-- Informasi Toko -->
             <div class="glass-card p-4 rounded-2xl">
                 <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Informasi Toko</h3>
                 
@@ -36,10 +37,38 @@
                 </div>
             </div>
 
-            <div class="glass-card p-4 rounded-2xl">
+            <!-- Lokasi & Alamat -->
+            <div class="glass-card p-4 rounded-2xl" 
+                 x-data="{
+                    selectedCity: @entangle('city'),
+                    selectedArea: @entangle('area'),
+                    districts: {
+                        'Bojonegoro': [
+                            'Balen', 'Baureno', 'Bojonegoro', 'Bubulan', 'Dander', 
+                            'Gayam', 'Gondang', 'Kalitidu', 'Kanor', 'Kapas', 
+                            'Kasiman', 'Kedewan', 'Kedungadem', 'Kepohbaru', 'Malo', 
+                            'Margomulyo', 'Ngambon', 'Ngasem', 'Ngraho', 'Padangan', 
+                            'Purwosari', 'Sekar', 'Sugihwaras', 'Sukosewu', 'Sumberejo', 
+                            'Tambakrejo', 'Temayang', 'Trucuk'
+                        ],
+                        'Tuban': [
+                            'Bancar', 'Bangilan', 'Grabagan', 'Jatirogo', 'Jenu', 
+                            'Kenduruan', 'Kerek', 'Merakurak', 'Montong', 'Palang', 
+                            'Parengan', 'Plumpang', 'Rengel', 'Semanding', 'Senori', 
+                            'Singgahan', 'Soko', 'Tambakboyo', 'Tuban', 'Widang'
+                        ]
+                    },
+                    get availableDistricts() {
+                        return this.districts[this.selectedCity] || [];
+                    },
+                    onCityChange() {
+                        this.selectedArea = '';
+                    }
+                 }">
                 <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Lokasi & Alamat</h3>
 
                 <div x-data="geolocation()" x-init="initGeo()" class="space-y-4">
+                    <!-- Status GPS -->
                     <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                         <div class="flex items-center space-x-3">
                             <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="status === 'success' ? 'bg-success-100 text-success-600' : (status === 'loading' ? 'bg-warning-100 text-warning-600' : 'bg-danger-100 text-danger-600')">
@@ -58,26 +87,44 @@
                     </div>
 
                     <!-- Mini Map -->
-                    <div wire:ignore id="map" class="h-48 w-full rounded-xl z-0" style="display: none;" :style="status === 'success' ? 'display: block;' : 'display: none;'"></div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap</label>
-                        <textarea wire:model="address" rows="3" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-primary-500 focus:border-primary-500" placeholder="Jl. Raya No. 123"></textarea>
+                    <div wire:ignore class="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-48 w-full" x-show="status === 'success'">
+                        <div x-ref="mapContainer" class="w-full h-full z-0"></div>
                     </div>
 
+                    <!-- Alamat Lengkap -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Alamat Lengkap</label>
+                        <textarea wire:model="address" rows="3" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-primary-500 focus:border-primary-500" placeholder="Nama Jalan, RT/RW, Dusun, Desa"></textarea>
+                        @error('address') <span class="text-sm text-danger-600">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Dropdown Kabupaten & Kecamatan -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kota/Kabupaten</label>
-                            <input type="text" wire:model="city" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-primary-500 focus:border-primary-500">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kabupaten <span class="text-danger-600">*</span></label>
+                            <select x-model="selectedCity" @change="onCityChange()" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                                <option value="">Pilih Kabupaten</option>
+                                <option value="Bojonegoro">Kab. Bojonegoro</option>
+                                <option value="Tuban">Kab. Tuban</option>
+                            </select>
+                            @error('city') <span class="text-sm text-danger-600">{{ $message }}</span> @enderror
                         </div>
+
                         <div>
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Area/Kecamatan</label>
-                            <input type="text" wire:model="area" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-primary-500 focus:border-primary-500">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kecamatan (Area) <span class="text-danger-600">*</span></label>
+                            <select x-model="selectedArea" :disabled="!selectedCity" class="w-full rounded-xl border-slate-200 dark:border-slate-700 dark:bg-slate-800 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                <option value="" x-text="selectedCity ? 'Pilih Kecamatan' : 'Pilih Kabupaten Dahulu'"></option>
+                                <template x-for="item in availableDistricts" :key="item">
+                                    <option :value="item" x-text="item" :selected="item === selectedArea"></option>
+                                </template>
+                            </select>
+                            @error('area') <span class="text-sm text-danger-600">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Foto Toko -->
             <div class="glass-card p-4 rounded-2xl">
                 <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">Foto Toko</h3>
                 
@@ -98,15 +145,17 @@
                 @error('store_photo') <span class="text-sm text-danger-600 mt-1 block">{{ $message }}</span> @enderror
             </div>
 
+            <!-- Submit Button -->
             <div class="pt-4">
-                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-colors duration-200">
+                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-xl shadow-sm transition-colors duration-200 flex items-center justify-center gap-2">
+                    <x-heroicon-o-check-circle class="w-5 h-5" />
                     Daftarkan Toko
                 </button>
             </div>
         </form>
     </div>
 
-    <!-- Leaflet JS & CSS -->
+    <!-- Leaflet Assets -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -137,8 +186,8 @@
                             this.status = 'success';
                             this.statusText = 'Lokasi berhasil didapatkan';
                             
-                            @this.set('latitude', this.lat);
-                            @this.set('longitude', this.lng);
+                            this.$wire.set('latitude', this.lat);
+                            this.$wire.set('longitude', this.lng);
 
                             this.initMap();
                         },
@@ -152,20 +201,35 @@
 
                 initMap() {
                     setTimeout(() => {
-                        if (!this.map && document.getElementById('map')) {
-                            this.map = L.map('map').setView([this.lat, this.lng], 15);
+                        if (typeof L === 'undefined') return;
+
+                        if (!this.map && this.$refs.mapContainer) {
+                            this.map = L.map(this.$refs.mapContainer).setView([this.lat, this.lng], 15);
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                 maxZoom: 19,
                                 attribution: '© OpenStreetMap'
                             }).addTo(this.map);
-                            this.marker = L.marker([this.lat, this.lng]).addTo(this.map);
+                            this.marker = L.marker([this.lat, this.lng], { draggable: true }).addTo(this.map);
+
+                            // Update koordinat jika pin marker digeser manual
+                            this.marker.on('dragend', (e) => {
+                                const newPos = e.target.getLatLng();
+                                this.lat = newPos.lat;
+                                this.lng = newPos.lng;
+                                this.$wire.set('latitude', this.lat);
+                                this.$wire.set('longitude', this.lng);
+                            });
                         } else if (this.map) {
                             this.map.setView([this.lat, this.lng], 15);
                             this.marker.setLatLng([this.lat, this.lng]);
                         }
-                    }, 100);
+
+                        if (this.map) {
+                            this.map.invalidateSize();
+                        }
+                    }, 200);
                 }
             }))
-        })
+        });
     </script>
 </div>

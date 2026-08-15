@@ -5,7 +5,6 @@ namespace App\Livewire\Sales;
 use App\Livewire\Sales\Concerns\EnsuresSalesPerson;
 use App\Models\Customer;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.sales', ['hideFab' => true])]
@@ -17,8 +16,6 @@ class StoreDetail extends Component
 
     public function mount(Customer $customer)
     {
-        $this->ensureSalesPerson();
-        
         if ($customer->sales_person_id !== $this->salesPerson->id) {
             abort(403, 'Unauthorized action.');
         }
@@ -26,11 +23,13 @@ class StoreDetail extends Component
         $this->customer = $customer;
     }
 
-    #[Title('Detail Toko')]
+    public function title(): string
+    {
+        return $this->customer->store_name;
+    }
+
     public function render()
     {
-        $this->title = $this->customer->store_name;
-        
         $recentOrders = $this->customer->salesOrders()
             ->latest()
             ->take(5)
@@ -43,6 +42,6 @@ class StoreDetail extends Component
         return view('livewire.sales.store-detail', [
             'recentOrders' => $recentOrders,
             'totalOmset' => $totalOmset,
-        ])->title($this->customer->store_name);
+        ]);
     }
 }

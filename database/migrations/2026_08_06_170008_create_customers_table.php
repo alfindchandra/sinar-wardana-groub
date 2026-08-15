@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('code', 20)->unique();
             $table->string('store_name', 200);
-            $table->string('owner_name', 200);
+            $table->string('owner_name', 200)->nullable();
             $table->string('phone', 20)->nullable();
             $table->string('email')->nullable();
             $table->text('address')->nullable();

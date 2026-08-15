@@ -44,15 +44,24 @@
             <p class="text-[11px] text-slate-400">Total Toko</p>
         </div>
 
+        <!-- Omset Hari Ini -->
+        @php 
+            $dailyPct = $dailyTarget > 0 ? min(100, round(($omsetToday / $dailyTarget) * 100)) : 0; 
+        @endphp
         <div class="glass-card p-4">
-            <div class="flex items-center gap-2 mb-1">
-                <div class="p-1.5 bg-warning-100 dark:bg-warning-900/30 text-warning-600 dark:text-warning-400 rounded-lg">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3v-6m-3 6v-9m-2 9h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2z"></path></svg>
+            <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 bg-warning-100 dark:bg-warning-900/30 text-warning-600 dark:text-warning-400 rounded-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <span class="text-[11px] text-slate-400">Omset Hari Ini</span>
                 </div>
-                <span class="text-[11px] text-slate-400">Komisi</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded {{ $dailyPct >= 100 ? 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400' : 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400' }}">
+                    {{ $dailyPct }}%
+                </span>
             </div>
-            <p class="text-lg font-bold text-slate-800 dark:text-white">Rp {{ number_format($commissionThisMonth, 0, ',', '.') }}</p>
-            <p class="text-[11px] text-slate-400">Bulan Ini</p>
+            <p class="text-lg font-bold text-slate-800 dark:text-white">Rp {{ number_format($omsetToday, 0, ',', '.') }}</p>
+            <p class="text-[11px] text-slate-400">Target: Rp {{ number_format($dailyTarget, 0, ',', '.') }}</p>
         </div>
     </div>
 

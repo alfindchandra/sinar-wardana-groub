@@ -13,19 +13,17 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.sales', ['hideFab' => true])]
-#[Title('Buat Order Baru')]
-class CreateOrder extends Component
+class EditOrder extends Component
 {
     use EnsuresSalesPerson;
+
+    public SalesOrder $salesOrder;
 
     public $customer_id;
     public $customer_name;
     public $customer_photo;
     public $customer_lat;
     public $customer_lng;
-    public $customer_area;
-    public $customer_address;
-    public $customer_phone;
     
     public $search = '';
     public $warehouse_id;
@@ -34,45 +32,44 @@ class CreateOrder extends Component
     public $productSearch = '';
     public $notes = '';
 
-    public function mount($customer = null)
+    public function mount(SalesOrder $salesOrder)
     {
-        if ($customer) {
-            $customerId = $customer instanceof Customer ? $customer->id : $customer;
-            $this->selectCustomer($customerId);
+        if ($salesOrder->sales_person_id !== $this->salesPerson->id) {
+            abort(403);
+        }
+        if ($salesOrder->status !== 'draft') {
+            session()->flash('toast', ['type' => 'error', 'message' => 'Hanya order draft yang bisa diedit', 'title' => 'Error']);
+            return $this->redirect(route('sales.orders.show', $salesOrder), navigate: true);
         }
         
-        $defaultWarehouse = Warehouse::where('is_active', true)->first();
-        if ($defaultWarehouse) {
-            $this->warehouse_id = $defaultWarehouse->id;
+        $this->salesOrder = $salesOrder;
+        $customer = $salesOrder->customer;
+        $this->customer_id = $customer->id;
+        $this->customer_name = $customer->store_name;
+        $this->customer_photo = $customer->store_photo;
+        $this->customer_lat = $customer->latitude;
+        $this->customer_lng = $customer->longitude;
+        $this->warehouse_id = $salesOrder->warehouse_id;
+        $this->payment_type = $salesOrder->payment_type;
+        $this->notes = $salesOrder->notes;
+        
+        // Load existing items
+        foreach ($salesOrder->items as $item) {
+            $this->items[] = [
+                'product_id' => $item->product_id,
+                'product_name' => $item->product?->name ?? 'Unknown',
+                'unit' => $item->unit ?? 'pcs',
+                'qty' => (float)$item->qty,
+                'price' => (float)$item->price,
+                'subtotal' => (float)$item->subtotal,
+            ];
         }
     }
 
-    public function selectCustomer($id)
+    #[Title('Edit Order')]
+    public function title()
     {
-        $customer = Customer::find($id);
-        if ($customer) {
-            $this->customer_id = $customer->id;
-            $this->customer_name = $customer->store_name;
-            $this->customer_photo = $customer->store_photo;
-            $this->customer_lat = $customer->latitude;
-            $this->customer_lng = $customer->longitude;
-            $this->customer_area = $customer->area;
-            $this->customer_address = $customer->address;
-            $this->customer_phone = $customer->phone;
-            $this->search = '';
-        }
-    }
-
-    public function clearCustomer()
-    {
-        $this->customer_id = null;
-        $this->customer_name = null;
-        $this->customer_photo = null;
-        $this->customer_lat = null;
-        $this->customer_lng = null;
-        $this->customer_area = null;
-        $this->customer_address = null;
-        $this->customer_phone = null;
+        return 'Edit Order ' . $this->salesOrder->so_number;
     }
 
     public function addProduct($productId)
@@ -120,20 +117,6 @@ class CreateOrder extends Component
         return collect($this->items)->sum('subtotal');
     }
 
-    public function getCustomersProperty()
-    {
-        if (strlen($this->search) < 2) return [];
-        
-        return Customer::where('sales_person_id', $this->salesPerson->id)
-            ->where(function($q) {
-                $q->where('store_name', 'like', '%' . $this->search . '%')
-                  ->orWhere('code', 'like', '%' . $this->search . '%');
-            })
-            ->where('is_active', true)
-            ->take(5)
-            ->get();
-    }
-
     public function getProductsProperty()
     {
         if (strlen($this->productSearch) < 2) return [];
@@ -152,7 +135,6 @@ class CreateOrder extends Component
     public function submit()
     {
         $this->validate([
-            'customer_id' => 'required|exists:customers,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'payment_type' => 'required|in:cash,tempo',
             'items' => 'required|array|min:1',
@@ -162,31 +144,22 @@ class CreateOrder extends Component
         ]);
 
         $subtotal = $this->subtotal;
-        $so_number = 'SO-' . date('Ymd') . '-' . strtoupper(uniqid());
         $customer = Customer::find($this->customer_id);
 
-        $order = SalesOrder::create([
-            'so_number' => $so_number,
-            'customer_id' => $this->customer_id,
-            'sales_person_id' => $this->salesPerson->id,
+        $this->salesOrder->update([
             'warehouse_id' => $this->warehouse_id,
-            'order_date' => now(),
             'payment_type' => $this->payment_type,
-            'due_date' => $this->payment_type === 'tempo' ? now()->addDays($customer->payment_term_days ?? 30) : now(),
-            'status' => 'draft',
+            'due_date' => $this->payment_type === 'tempo' ? $this->salesOrder->order_date->addDays($customer->payment_term_days ?? 30) : $this->salesOrder->order_date,
             'subtotal' => $subtotal,
-            'discount' => 0,
-            'tax' => 0,
-            'shipping_cost' => 0,
             'grand_total' => $subtotal,
             'notes' => $this->notes,
-            'source' => 'sales',
-            'created_by' => auth()->id(),
         ]);
 
+        $this->salesOrder->items()->delete();
+        
         foreach ($this->items as $item) {
             SalesOrderItem::create([
-                'sales_order_id' => $order->id,
+                'sales_order_id' => $this->salesOrder->id,
                 'product_id' => $item['product_id'],
                 'qty' => $item['qty'],
                 'unit' => $item['unit'] ?? 'pcs',
@@ -196,13 +169,13 @@ class CreateOrder extends Component
             ]);
         }
 
-        session()->flash('toast', ['type' => 'success', 'message' => 'Order berhasil dibuat!', 'title' => 'Sukses']);
+        session()->flash('toast', ['type' => 'success', 'message' => 'Order berhasil diperbarui!', 'title' => 'Sukses']);
         
-        return $this->redirect(route('sales.orders.show', $order->id), navigate: true);
+        return $this->redirect(route('sales.orders.show', $this->salesOrder->id), navigate: true);
     }
 
     public function render()
     {
-        return view('livewire.sales.create-order');
+        return view('livewire.sales.edit-order');
     }
 }

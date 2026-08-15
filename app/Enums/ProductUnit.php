@@ -9,6 +9,9 @@ enum ProductUnit: string
     case BAL = 'bal';
     case KARUNG = 'karung';
     case PACK = 'pack';
+    case PCS = 'pcs';
+    case BOTOL = 'botol';
+    case RENCENG = 'renceng';
 
     public function label(): string
     {
@@ -18,6 +21,9 @@ enum ProductUnit: string
             self::BAL => 'Bal',
             self::KARUNG => 'Karung',
             self::PACK => 'Pack',
+            self::PCS => 'Pcs',
+            self::BOTOL => 'Botol',
+            self::RENCENG => 'Renceng',
         };
     }
 

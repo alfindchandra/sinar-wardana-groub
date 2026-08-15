@@ -13,6 +13,7 @@ use App\Livewire\Admin\StoreManager;
 use App\Livewire\Admin\StoreMap;
 use App\Livewire\Sales\CreateOrder;
 use App\Livewire\Sales\Dashboard as SalesDashboard;
+use App\Livewire\Sales\EditOrder;
 use App\Livewire\Sales\MyTargets;
 use App\Livewire\Sales\OrderDetail;
 use App\Livewire\Sales\OrderList;
@@ -56,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Order
         Route::get('/order', OrderList::class)->name('orders.index');
         Route::get('/order/baru/{customer?}', CreateOrder::class)->name('orders.create');
+        Route::get('/order/{salesOrder}/edit', EditOrder::class)->name('orders.edit');
         Route::get('/order/{salesOrder}', OrderDetail::class)->name('orders.show');
 
         // Target & Profil

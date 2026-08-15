@@ -3,7 +3,6 @@
 namespace App\Livewire\Sales;
 
 use App\Livewire\Sales\Concerns\EnsuresSalesPerson;
-use App\Models\SalesCommission;
 use App\Models\SalesOrder;
 use App\Models\SalesTarget;
 use Livewire\Attributes\Layout;
@@ -19,43 +18,58 @@ class Dashboard extends Component
         return 'Beranda Sales';
     }
 
-    public function render()
-    {
-        $todayOrders = SalesOrder::where('sales_person_id', $this->salesPerson->id)
-            ->whereDate('order_date', now()->toDateString())
-            ->with('customer:id,store_name,store_photo')
-            ->orderByDesc('created_at')
-            ->get();
+   public function render()
+{
+    $validStatuses = ['draft', 'confirmed', 'processing', 'shipped', 'completed'];
 
-        $target = SalesTarget::where('sales_person_id', $this->salesPerson->id)
-            ->where('month', now()->month)
-            ->where('year', now()->year)
-            ->first();
+    // 1. Ambil orderan hari ini (cek rentang 00:00:00 sampai 23:59:59)
+    $todayOrders = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+        ->where(function($q) {
+            $q->whereDate('order_date', today())
+              ->orWhereDate('created_at', today());
+        })
+        ->with('customer:id,store_name,store_photo')
+        ->orderByDesc('created_at')
+        ->get();
 
-        $commissionThisMonth = SalesCommission::where('sales_person_id', $this->salesPerson->id)
-            ->byPeriod(now()->month, now()->year)
-            ->sum('amount');
+    // 2. Hitung omset hari ini dari orderan yang berstatus valid
+    $omsetToday = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+        ->where(function($q) {
+            $q->whereDate('order_date', today())
+              ->orWhereDate('created_at', today());
+        })
+        ->whereIn('status', $validStatuses)
+        ->sum('grand_total');
 
-        $omsetThisMonth = SalesOrder::where('sales_person_id', $this->salesPerson->id)
-            ->whereMonth('order_date', now()->month)
-            ->whereYear('order_date', now()->year)
-            ->whereIn('status', ['confirmed', 'processing', 'shipped', 'completed'])
-            ->sum('grand_total');
+    $dailyTarget = 12000000;
 
-        $ordersThisMonth = SalesOrder::where('sales_person_id', $this->salesPerson->id)
-            ->whereMonth('order_date', now()->month)
-            ->whereYear('order_date', now()->year)
-            ->count();
+    $target = SalesTarget::where('sales_person_id', $this->salesPerson->id)
+        ->where('month', now()->month)
+        ->where('year', now()->year)
+        ->first();
 
-        $totalStores = $this->salesPerson->customers()->active()->count();
+    // 3. Omset bulan ini
+    $omsetThisMonth = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+        ->whereMonth('order_date', now()->month)
+        ->whereYear('order_date', now()->year)
+        ->whereIn('status', $validStatuses)
+        ->sum('grand_total');
 
-        return view('livewire.sales.dashboard', [
-            'todayOrders' => $todayOrders,
-            'target' => $target,
-            'commissionThisMonth' => $commissionThisMonth,
-            'omsetThisMonth' => $omsetThisMonth,
-            'ordersThisMonth' => $ordersThisMonth,
-            'totalStores' => $totalStores,
-        ]);
-    }
+    $ordersThisMonth = SalesOrder::where('sales_person_id', $this->salesPerson->id)
+        ->whereMonth('order_date', now()->month)
+        ->whereYear('order_date', now()->year)
+        ->count();
+
+    $totalStores = $this->salesPerson->customers()->where('is_active', true)->count();
+
+    return view('livewire.sales.dashboard', [
+        'todayOrders' => $todayOrders,
+        'omsetToday' => (float) $omsetToday,
+        'dailyTarget' => $dailyTarget,
+        'target' => $target,
+        'omsetThisMonth' => (float) $omsetThisMonth,
+        'ordersThisMonth' => $ordersThisMonth,
+        'totalStores' => $totalStores,
+    ]);
+}
 }

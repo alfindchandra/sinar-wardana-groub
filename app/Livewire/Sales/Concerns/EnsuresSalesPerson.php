@@ -11,6 +11,11 @@ trait EnsuresSalesPerson
 
     public function bootEnsuresSalesPerson(): void
     {
+        $this->ensureSalesPerson();
+    }
+
+    public function ensureSalesPerson(): void
+    {
         $person = Auth::user()?->salesPerson;
 
         abort_unless($person, 403, 'Akun Anda belum terdaftar sebagai Sales. Hubungi admin untuk menghubungkan akun.');

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('brand', 100)->nullable();
             $table->foreignId('category_id')->constrained('categories')->onDelete('restrict');
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('set null');
-            $table->enum('unit', ['dus', 'sak', 'bal', 'karung', 'pack'])->default('dus');
+            $table->string('unit', 50)->default('dus');
             $table->decimal('weight', 10, 2)->nullable();
             $table->integer('content_per_unit')->nullable();
             $table->text('description')->nullable();

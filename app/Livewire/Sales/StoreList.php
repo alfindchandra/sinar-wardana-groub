@@ -5,7 +5,6 @@ namespace App\Livewire\Sales;
 use App\Livewire\Sales\Concerns\EnsuresSalesPerson;
 use App\Models\Customer;
 use Livewire\Attributes\Layout;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -17,17 +16,16 @@ class StoreList extends Component
 
     public $search = '';
 
-    public function mount()
-    {
-        $this->ensureSalesPerson();
-    }
-
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
-    #[Title('Toko Saya')]
+    public function title(): string
+    {
+        return 'Toko Saya';
+    }
+
     public function render()
     {
         $query = Customer::where('sales_person_id', $this->salesPerson->id)

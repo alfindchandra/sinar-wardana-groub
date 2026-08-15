@@ -4,92 +4,56 @@
         <div class="glass-card p-4">
             <h2 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Toko / Pelanggan</h2>
             
-            @if($customer_id)
-                <div class="flex items-start justify-between">
-                    <div class="flex items-center gap-3">
-                        @if($customer_photo)
-                            <img src="{{ Storage::url($customer_photo) }}" alt="Toko" class="w-12 h-12 rounded-lg object-cover">
-                        @else
-                            <div class="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"></path></svg>
-                            </div>
-                        @endif
-                        <div>
-                            <h3 class="font-medium text-slate-900 dark:text-white">{{ $customer_name }}</h3>
-                            @if($customer_area)
-                                <p class="text-xs text-primary-600 dark:text-primary-400 font-medium">{{ $customer_area }}</p>
-                            @endif
-                            @if($customer_address)
-                                <p class="text-[11px] text-slate-400 line-clamp-1">{{ $customer_address }}</p>
-                            @endif
-                            @if($customer_phone)
-                                <p class="text-[11px] text-slate-400">📞 {{ $customer_phone }}</p>
-                            @endif
+            <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                    @if($customer_photo)
+                        <img src="{{ Storage::url($customer_photo) }}" alt="Toko" class="w-12 h-12 rounded-lg object-cover">
+                    @else
+                        <div class="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z"></path></svg>
                         </div>
+                    @endif
+                    <div>
+                        <h3 class="font-medium text-slate-900 dark:text-white">{{ $customer_name }}</h3>
                     </div>
-                    <button type="button" wire:click="clearCustomer" class="text-sm text-danger-600 hover:text-danger-700 p-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
                 </div>
-                
-                @if($customer_lat && $customer_lng)
-                    <!-- Container Leaflet Map berbasis Alpine.js -->
-                    <div class="mt-3 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 h-36 relative z-0" 
-                         wire:ignore 
-                         x-data="{
-                             map: null,
-                             lat: {{ (float) $customer_lat }},
-                             lng: {{ (float) $customer_lng }},
-                             initMap() {
-                                 if (typeof L === 'undefined') return;
-                                 if (this.map) {
-                                     this.map.remove();
-                                 }
-                                 this.map = L.map($refs.mapContainer, {
-                                     zoomControl: false,
-                                     dragging: false,
-                                     scrollWheelZoom: false,
-                                     touchZoom: false,
-                                     doubleClickZoom: false
-                                 }).setView([this.lat, this.lng], 15);
-
-                                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                     maxZoom: 19
-                                 }).addTo(this.map);
-
-                                 L.marker([this.lat, this.lng]).addTo(this.map);
-
-                                 setTimeout(() => {
-                                     this.map.invalidateSize();
-                                 }, 200);
+            </div>
+            
+            @if($customer_lat && $customer_lng)
+                <!-- Container Leaflet Map berbasis Alpine.js -->
+                <div class="mt-3 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 h-36 relative z-0" 
+                     wire:ignore 
+                     x-data="{
+                         map: null,
+                         lat: {{ (float) $customer_lat }},
+                         lng: {{ (float) $customer_lng }},
+                         initMap() {
+                             if (typeof L === 'undefined') return;
+                             if (this.map) {
+                                 this.map.remove();
                              }
-                         }" 
-                         x-init="initMap()">
-                        <div x-ref="mapContainer" class="w-full h-full"></div>
-                    </div>
-                @endif
-            @else
-                <div class="relative">
-                    <svg class="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path></svg>
-                    <input type="text" wire:model.live.debounce.300ms="search" placeholder="Cari nama toko..." 
-                        class="w-full pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-primary-500 focus:border-primary-500 dark:bg-slate-800 dark:text-white">
+                             this.map = L.map($refs.mapContainer, {
+                                 zoomControl: false,
+                                 dragging: false,
+                                 scrollWheelZoom: false,
+                                 touchZoom: false,
+                                 doubleClickZoom: false
+                             }).setView([this.lat, this.lng], 15);
+
+                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                 maxZoom: 19
+                             }).addTo(this.map);
+
+                             L.marker([this.lat, this.lng]).addTo(this.map);
+
+                             setTimeout(() => {
+                                 this.map.invalidateSize();
+                             }, 200);
+                         }
+                     }" 
+                     x-init="initMap()">
+                    <div x-ref="mapContainer" class="w-full h-full"></div>
                 </div>
-                
-                @if(strlen($search) >= 2)
-                <div class="mt-2 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 max-h-48 overflow-y-auto">
-                    @forelse($this->customers as $cust)
-                        <button type="button" wire:click="selectCustomer({{ $cust->id }})" class="w-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex justify-between items-center">
-                            <div>
-                                <div class="font-medium text-slate-900 dark:text-white text-sm">{{ $cust->store_name }}</div>
-                                <div class="text-xs text-slate-500">{{ $cust->code }} @if($cust->area)&middot; {{ $cust->area }}@endif</div>
-                            </div>
-                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.25 4.5l7.5 7.5-7.5 7.5"></path></svg>
-                        </button>
-                    @empty
-                        <div class="px-4 py-3 text-sm text-center text-slate-500">Tidak ditemukan</div>
-                    @endforelse
-                </div>
-                @endif
             @endif
         </div>
 
@@ -194,7 +158,7 @@
         </div>
         <button type="button" wire:click="submit" class="w-full flex justify-center items-center gap-2 bg-primary-600 text-white font-medium py-3 rounded-xl hover:bg-primary-700 transition shadow-lg shadow-primary-600/30">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Simpan Order
+            Simpan Perubahan
         </button>
     </div>
 </div>

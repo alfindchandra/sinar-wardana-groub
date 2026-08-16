@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="google-site-verification" content="uFELMg_VKLIT3Gnw2694BSL2NIF1ijYqFJw5KJ_lKHA" />
 
     <title>{{ $title ?? 'Belanja' }} - {{ config('app.name', 'Sinar Wardana') }}</title>
     <meta name="description" content="Belanja kebutuhan sembako &amp; grosir online di {{ config('app.name', 'Sinar Wardana') }}. Harga bersaing, pengiriman cepat.">

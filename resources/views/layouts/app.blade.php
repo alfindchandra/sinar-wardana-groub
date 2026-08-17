@@ -69,7 +69,7 @@
                 </div>
 
                 <!-- Pembelian -->
-                <div x-data="{ open: false }" class="space-y-1">
+                <div x-data="{ open: {{ request()->routeIs('pembelian.*') ? 'true' : 'false' }} }" class="space-y-1">
                     <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-slate-300 rounded-xl hover:bg-slate-800/50 hover:text-white transition-all duration-200">
                         <div class="flex items-center">
                             <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -78,9 +78,9 @@
                         <svg :class="{'rotate-90': open}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                     <div x-show="open" x-transition.opacity class="pl-11 pr-4 py-2 space-y-2">
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Purchase Order</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Penerimaan Barang</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Retur Supplier</a>
+                        <a wire:navigate href="{{ route('pembelian.purchase-orders.index') }}" class="block text-sm transition-colors {{ request()->routeIs('pembelian.purchase-orders.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Purchase Order</a>
+                        <a wire:navigate href="{{ route('pembelian.goods-receipts.index') }}" class="block text-sm transition-colors {{ request()->routeIs('pembelian.goods-receipts.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Penerimaan Barang</a>
+                        <a wire:navigate href="{{ route('pembelian.supplier-returns.index') }}" class="block text-sm transition-colors {{ request()->routeIs('pembelian.supplier-returns.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Retur Supplier</a>
                     </div>
                 </div>
 
@@ -94,11 +94,11 @@
                         <svg :class="{'rotate-90': open}" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     </button>
                     <div x-show="open" x-transition.opacity class="pl-11 pr-4 py-2 space-y-2">
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Stok</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Mutasi</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Stock Opname</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Batch</a>
-                        <a href="#" class="block text-sm text-slate-400 hover:text-white transition-colors">Kartu Stok</a>
+                        <a wire:navigate href="{{ route('gudang.stock.index') }}" class="block text-sm transition-colors {{ request()->routeIs('gudang.stock.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Stok</a>
+                        <a wire:navigate href="{{ route('gudang.mutations.index') }}" class="block text-sm transition-colors {{ request()->routeIs('gudang.mutations.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Mutasi</a>
+                        <a wire:navigate href="{{ route('gudang.stock-opname.index') }}" class="block text-sm transition-colors {{ request()->routeIs('gudang.stock-opname.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Stock Opname</a>
+                        <a wire:navigate href="{{ route('gudang.batches.index') }}" class="block text-sm transition-colors {{ request()->routeIs('gudang.batches.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Batch</a>
+                        <a wire:navigate href="{{ route('gudang.stock-card.index') }}" class="block text-sm transition-colors {{ request()->routeIs('gudang.stock-card.*') ? 'text-white font-medium' : 'text-slate-400 hover:text-white' }}">Kartu Stok</a>
                     </div>
                 </div>
 

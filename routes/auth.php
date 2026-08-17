@@ -27,8 +27,11 @@ Route::middleware('auth')->group(function () {
         ->middleware(['signed', 'throttle:6,1'])
         ->name('verification.verify');
 
-    Route::post('logout', Logout::class)
-        ->name('logout');
+    Route::post('logout', function (Logout $logout) {
+    $logout();
+
+    return redirect('/');
+})->name('logout');
 
     Volt::route('confirm-password', 'pages.auth.confirm-password')
         ->name('password.confirm');

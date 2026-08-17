@@ -7,10 +7,18 @@ use App\Livewire\MasterData\ProductForm;
 use App\Livewire\MasterData\ProductManager;
 use App\Livewire\MasterData\SupplierManager;
 use App\Livewire\MasterData\WarehouseManager;
+use App\Livewire\Gudang\StockManager;
+use App\Livewire\Gudang\MutationManager;
+use App\Livewire\Gudang\StockOpnameManager;
+use App\Livewire\Gudang\BatchManager;
+use App\Livewire\Gudang\StockCardManager;
 use App\Livewire\Admin\SalesOrderManager;
 use App\Livewire\Admin\SalesTargetManager;
 use App\Livewire\Admin\StoreManager;
 use App\Livewire\Admin\StoreMap;
+use App\Livewire\Pembelian\PurchaseOrderManager;
+use App\Livewire\Pembelian\GoodsReceiptManager;
+use App\Livewire\Pembelian\SupplierReturnManager;
 use App\Livewire\Sales\CreateOrder;
 use App\Livewire\Sales\Dashboard as SalesDashboard;
 use App\Livewire\Sales\EditOrder;
@@ -76,6 +84,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/target-sales', SalesTargetManager::class)->name('sales-targets.index');
     });
 
+    // ==== Gudang ====
+    Route::prefix('gudang')->name('gudang.')->group(function () {
+        Route::get('/stok', StockManager::class)->name('stock.index');
+        Route::get('/mutasi', MutationManager::class)->name('mutations.index');
+        Route::get('/stock-opname', StockOpnameManager::class)->name('stock-opname.index');
+        Route::get('/batch', BatchManager::class)->name('batches.index');
+        Route::get('/kartu-stok', StockCardManager::class)->name('stock-card.index');
+    });
+
     // ==== Master Data ====
     Route::prefix('master-data')->name('master-data.')->group(function () {
         Route::get('/kategori', CategoryManager::class)->name('categories.index');
@@ -86,6 +103,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/produk/tambah', ProductForm::class)->name('products.create');
         Route::get('/produk/{product}/edit', ProductForm::class)->name('products.edit');
     });
+     // ==== Pembelian ====
+    Route::prefix('pembelian')->name('pembelian.')->group(function () {
+        Route::get('/purchase-order', PurchaseOrderManager::class)->name('purchase-orders.index');
+        Route::get('/penerimaan-barang', GoodsReceiptManager::class)->name('goods-receipts.index');
+        Route::get('/retur-supplier', SupplierReturnManager::class)->name('supplier-returns.index');
+    });
+
 });
 
 Route::view('profile', 'profile')

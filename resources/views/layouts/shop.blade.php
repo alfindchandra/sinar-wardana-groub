@@ -20,8 +20,19 @@
 <body class="font-sans antialiased text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col transition-colors duration-300 selection:bg-primary-500 selection:text-white">
 
     <!-- Top bar promo -->
-    <div class="bg-primary-600 text-white text-center text-xs sm:text-sm py-1.5 px-4">
-        🚚 Gratis ongkir untuk pembelian di atas Rp 500.000 &middot; Order sekarang, kami antar hari ini!
+    <div class="bg-primary-600 text-white text-xs sm:text-sm py-2 px-4 shadow-sm">
+        <div class="flex items-center justify-center gap-2 max-w-7xl mx-auto">
+            <!-- Ikon Mobil / Truk Pengiriman -->
+            <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                <circle cx="7" cy="17" r="2" stroke-width="2" />
+                <circle cx="17" cy="17" r="2" stroke-width="2" />
+            </svg>
+
+            <span class="font-medium truncate sm:overflow-visible">
+               Gratis ongkir untuk pembelian di atas <span class="font-bold">Rp 500.000</span> &middot; Order sekarang, kami antar hari ini!
+            </span>
+        </div>
     </div>
 
     <!-- Navbar -->
@@ -137,47 +148,108 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-300 mt-12">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div>
-                    <div class="flex items-center gap-2.5 mb-3">
-                        
-                        <span class="text-lg font-bold text-white">Sinar Wardana</span>
+    <footer class="bg-gray-950 text-slate-300 mt-12 border-t border-red-950/30">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
+            
+            <!-- Kolom Logo & Deskripsi -->
+            <div class="md:col-span-4 lg:col-span-5">
+                <div class="flex items-center gap-3 mb-5">
+                    <!-- Placeholder untuk Logo Anda -->
+                    <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-inner">
+                        <img src="{{ asset('images/logo.png') }}" alt="Sinar Wardana Logo" class="h-7 w-auto object-contain">
                     </div>
-                    <p class="text-sm text-slate-400">Distributor &amp; grosir sembako terpercaya. Melayani toko, agen, dan distributor di seluruh Indonesia.</p>
+                    <span class="text-2xl font-extrabold tracking-tight text-white">Sinar <span class="text-red-500">Wardana</span></span>
                 </div>
+                <p class="text-base text-slate-400 leading-relaxed max-w-md">
+                    Distributor &amp; grosir sembako terpercaya sejak 2026. Kami bangga melayani kebutuhan toko, agen, dan distributor di seluruh penjuru Indonesia dengan produk berkualitas dan harga bersaing.
+                </p>
+                
+                <!-- Opsi: Tambahkan ikon media sosial di sini nanti -->
+            </div>
+
+            <!-- Kolom Navigasi -->
+            <div class="md:col-span-8 lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
+                
+                <!-- Belanja -->
                 <div>
-                    <h4 class="text-sm font-bold text-white mb-3">Belanja</h4>
-                    <ul class="space-y-2 text-sm text-slate-400">
-                        <li><a href="{{ route('shop.products') }}" class="hover:text-white transition-colors">Semua Produk</a></li>
-                        <li><a href="{{ route('shop.home') }}" class="hover:text-white transition-colors">Promo</a></li>
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-100 mb-5">Belanja</h4>
+                    <ul class="space-y-3.5 text-base text-slate-400">
+                        <li>
+                            <a href="{{ route('shop.products') }}" class="inline-flex items-center group transition-colors hover:text-red-400">
+                                <span class="origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 w-2 h-0.5 bg-red-500 mr-0 group-hover:mr-2 rounded-full"></span>
+                                Semua Produk
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('shop.home') }}" class="inline-flex items-center group transition-colors hover:text-red-400">
+                                <span class="origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 w-2 h-0.5 bg-red-500 mr-0 group-hover:mr-2 rounded-full"></span>
+                                Promo Spesial
+                            </a>
+                        </li>
+                        <!-- Tambahkan kategori utama jika perlu -->
                     </ul>
                 </div>
+
+                <!-- Akun -->
                 <div>
-                    <h4 class="text-sm font-bold text-white mb-3">Akun</h4>
-                    <ul class="space-y-2 text-sm text-slate-400">
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-100 mb-5">Akun</h4>
+                    <ul class="space-y-3.5 text-base text-slate-400">
                         @guest
-                            <li><a href="{{ route('login') }}" class="hover:text-white transition-colors">Masuk</a></li>
-                            <li><a href="{{ route('register') }}" class="hover:text-white transition-colors">Daftar Toko Baru</a></li>
+                            <li>
+                                <a href="{{ route('login') }}" class="inline-flex items-center group transition-colors hover:text-red-400">
+                                    <span class="origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 w-2 h-0.5 bg-red-500 mr-0 group-hover:mr-2 rounded-full"></span>
+                                    Masuk
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('register') }}" class="inline-flex items-center group transition-colors hover:text-red-400">
+                                    <span class="origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 w-2 h-0.5 bg-red-500 mr-0 group-hover:mr-2 rounded-full"></span>
+                                    Daftar Toko Baru
+                                </a>
+                            </li>
                         @else
-                            <li><a href="{{ route('portal.dashboard') }}" class="hover:text-white transition-colors">Dashboard Saya</a></li>
+                            <li>
+                                <a href="{{ route('portal.dashboard') }}" class="inline-flex items-center group transition-colors hover:text-red-400">
+                                    <span class="origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300 w-2 h-0.5 bg-red-500 mr-0 group-hover:mr-2 rounded-full"></span>
+                                    Dashboard Saya
+                                </a>
+                            </li>
+                            <!-- Tambahkan Pesanan Saya, dll. jika perlu -->
                         @endguest
                     </ul>
                 </div>
-                <div>
-                    <h4 class="text-sm font-bold text-white mb-3">Hubungi Kami</h4>
-                    <ul class="space-y-2 text-sm text-slate-400">
-                        <li>0813-8217-6161</li>
-                        
+
+                <!-- Hubungi Kami -->
+                <div class="col-span-2 sm:col-span-1">
+                    <h4 class="text-sm font-semibold uppercase tracking-wider text-slate-100 mb-5">Hubungi Kami</h4>
+                    <ul class="space-y-4 text-base text-slate-400">
+                        <li class="flex items-start gap-3">
+                            <!-- Ikon Telepon/WA (SVG) -->
+                            <svg class="w-5 h-5 mt-0.5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                            <span class="font-medium text-slate-200">0813-8217-6161</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                             <!-- Ikon Lokasi (SVG) -->
+                            <svg class="w-5 h-5 mt-0.5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span>Paregan</span>
+                        </li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-slate-800 mt-8 pt-6 text-center text-sm text-slate-500">
-                &copy; {{ date('Y') }} {{ config('app.name', 'Sinar Wardana') }}. Seluruh hak cipta dilindungi.
+
+        </div>
+
+        <!-- Bagian Bawah Footer -->
+        <div class="border-t border-slate-800/60 mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left text-sm text-slate-500">
+            <p>&copy; {{ date('Y') }} {{ config('app.name', 'Sinar Wardana') }}. Seluruh hak cipta dilindungi.</p>
+            <div class="flex items-center gap-6">
+                <a href="#" class="hover:text-slate-300 transition-colors">Kebijakan Privasi</a>
+                <a href="#" class="hover:text-slate-300 transition-colors">Syarat & Ketentuan</a>
             </div>
         </div>
-    </footer>
+    </div>
+</footer>
 
     <x-toast />
 

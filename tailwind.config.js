@@ -28,18 +28,19 @@ export default {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+               
                 primary: {
-                    50: '#eff6ff',
-                    100: '#dbeafe',
-                    200: '#bfdbfe',
-                    300: '#93c5fd',
-                    400: '#60a5fa',
-                    500: '#3b82f6',
-                    600: '#2563eb', // Primary
-                    700: '#1d4ed8',
-                    800: '#1e40af',
-                    900: '#1e3a8a',
-                    950: '#172554',
+                    50: '#f0f9ff',
+                    100: '#e0f2fe',
+                    200: '#bae6fd',
+                    300: '#7dd3fc',
+                    400: '#60c5f8', // Warna biru badge "Menerima Ecer & Grosir"
+                    500: '#23a8ec', // Warna biru utama (solid & kontras)
+                    600: '#0d8bd6', // Warna tombol hover/aktif
+                    700: '#096fae',
+                    800: '#0d5c8d',
+                    900: '#114c73',
+                    950: '#0b314d',
                 },
                 success: {
                     50: '#f0fdf4',

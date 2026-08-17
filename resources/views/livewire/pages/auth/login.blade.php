@@ -36,11 +36,12 @@ new #[Layout('layouts.guest')] class extends Component
 
     <!-- Header / Brand Logo Sembako -->
     <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary-600 to-amber-500 text-white shadow-lg shadow-primary-500/30 mb-3.5">
+        <div class="inline-flex items-center justify-center text-white  mb-3.5">
             <!-- Icon Keranjang Belanja / Toko -->
-            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
+            <img src="{{ asset('images/logo.png') }}" 
+                alt="Logo Sembako" 
+                class="w-18 h-10 object-contain"
+            />
         </div>
         <h2 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Masuk ke Akun
@@ -87,11 +88,7 @@ new #[Layout('layouts.guest')] class extends Component
                 <label for="password" class="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
                     Kata Sandi <span class="text-rose-500">*</span>
                 </label>
-                @if (Route::has('password.request'))
-                    <a class="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 transition-colors" href="{{ route('password.request') }}" wire:navigate>
-                        Lupa sandi?
-                    </a>
-                @endif
+
             </div>
 
             <div class="relative">

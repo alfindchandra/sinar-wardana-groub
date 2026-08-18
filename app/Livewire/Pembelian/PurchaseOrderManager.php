@@ -156,26 +156,36 @@ class PurchaseOrderManager extends Component
             $subtotal = 0;
             $itemsData = [];
 
+            // Ambil semua produk yang dipilih sekaligus agar efisien (mencegah N+1)
+            $productIds = collect($this->items)->pluck('product_id')->filter()->unique();
+            $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
             foreach ($this->items as $item) {
                 $itemSubtotal = max(($item['qty'] * $item['price']) - ($item['discount'] ?? 0), 0);
                 $subtotal += $itemSubtotal;
+
+                $product = $products->get($item['product_id']);
+                // Default ke 'pcs' jika unit di data master produk null/kosong
+                $unit = $product?->unit ?? 'pcs';
+
                 $itemsData[] = [
                     'product_id' => $item['product_id'],
-                    'qty' => $item['qty'],
-                    'price' => $item['price'],
-                    'discount' => $item['discount'] ?? 0,
-                    'subtotal' => $itemSubtotal,
+                    'qty'        => $item['qty'],
+                    'unit'       => $unit,
+                    'price'      => $item['price'],
+                    'discount'   => $item['discount'] ?? 0,
+                    'subtotal'   => $itemSubtotal,
                 ];
             }
 
             $payload = [
-                'supplier_id' => $this->supplier_id,
-                'warehouse_id' => $this->warehouse_id,
-                'order_date' => $this->order_date,
+                'supplier_id'   => $this->supplier_id,
+                'warehouse_id'  => $this->warehouse_id,
+                'order_date'    => $this->order_date,
                 'expected_date' => $this->expected_date,
-                'notes' => $this->notes,
-                'subtotal' => $subtotal,
-                'grand_total' => $subtotal,
+                'notes'         => $this->notes,
+                'subtotal'      => $subtotal,
+                'grand_total'   => $subtotal,
             ];
 
             if ($this->isEdit) {
@@ -184,7 +194,7 @@ class PurchaseOrderManager extends Component
                 $po->items()->delete();
             } else {
                 $payload['created_by'] = Auth::id();
-                $payload['status'] = 'draft';
+                $payload['status']     = 'draft';
                 $po = PurchaseOrder::create($payload);
             }
 
@@ -193,7 +203,12 @@ class PurchaseOrderManager extends Component
             }
         });
 
-        $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => $this->isEdit ? 'PO berhasil diperbarui.' : 'PO berhasil dibuat.']);
+        $this->dispatch('toast', [
+            'type'    => 'success',
+            'title'   => 'Berhasil',
+            'message' => $this->isEdit ? 'PO berhasil diperbarui.' : 'PO berhasil dibuat.',
+        ]);
+
         $this->showModal = false;
         $this->resetForm();
     }
@@ -203,17 +218,25 @@ class PurchaseOrderManager extends Component
         $po = PurchaseOrder::findOrFail($id);
 
         if ($po->status !== 'draft') {
-            $this->dispatch('toast', ['type' => 'error', 'title' => 'Gagal', 'message' => 'Hanya PO berstatus draft yang bisa disetujui.']);
+            $this->dispatch('toast', [
+                'type'    => 'error',
+                'title'   => 'Gagal',
+                'message' => 'Hanya PO berstatus draft yang bisa disetujui.',
+            ]);
             return;
         }
 
         $po->update([
-            'status' => 'approved',
+            'status'      => 'approved',
             'approved_by' => Auth::id(),
             'approved_at' => now(),
         ]);
 
-        $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'PO berhasil disetujui.']);
+        $this->dispatch('toast', [
+            'type'    => 'success',
+            'title'   => 'Berhasil',
+            'message' => 'PO berhasil disetujui.',
+        ]);
     }
 
     public function cancel($id)
@@ -221,20 +244,28 @@ class PurchaseOrderManager extends Component
         $po = PurchaseOrder::findOrFail($id);
 
         if (in_array($po->status, ['closed', 'cancelled'])) {
-            $this->dispatch('toast', ['type' => 'error', 'title' => 'Gagal', 'message' => 'PO ini tidak bisa dibatalkan.']);
+            $this->dispatch('toast', [
+                'type'    => 'error',
+                'title'   => 'Gagal',
+                'message' => 'PO ini tidak bisa dibatalkan.',
+            ]);
             return;
         }
 
         $po->update(['status' => 'cancelled']);
-        $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'PO berhasil dibatalkan.']);
+        $this->dispatch('toast', [
+            'type'    => 'success',
+            'title'   => 'Berhasil',
+            'message' => 'PO berhasil dibatalkan.',
+        ]);
     }
 
     public function triggerDelete($id)
     {
         $this->dispatch('swal:confirm', [
             'title' => 'Apakah Anda yakin?',
-            'text' => 'PO ini akan dihapus.',
-            'id' => $id,
+            'text'  => 'PO ini akan dihapus.',
+            'id'    => $id,
         ]);
     }
 
@@ -243,12 +274,20 @@ class PurchaseOrderManager extends Component
         $po = PurchaseOrder::findOrFail($id);
 
         if ($po->status !== 'draft') {
-            $this->dispatch('toast', ['type' => 'error', 'title' => 'Gagal', 'message' => 'Hanya PO berstatus draft yang bisa dihapus.']);
+            $this->dispatch('toast', [
+                'type'    => 'error',
+                'title'   => 'Gagal',
+                'message' => 'Hanya PO berstatus draft yang bisa dihapus.',
+            ]);
             return;
         }
 
         $po->delete();
-        $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'PO berhasil dihapus.']);
+        $this->dispatch('toast', [
+            'type'    => 'success',
+            'title'   => 'Berhasil',
+            'message' => 'PO berhasil dihapus.',
+        ]);
     }
 
     public function resetForm()
@@ -271,9 +310,9 @@ class PurchaseOrderManager extends Component
 
         return view('livewire.pembelian.purchase-order-manager', [
             'purchaseOrders' => $purchaseOrders,
-            'suppliers' => Supplier::where('is_active', true)->orderBy('name')->get(),
-            'warehouses' => Warehouse::where('is_active', true)->orderBy('name')->get(),
-            'products' => Product::where('is_active', true)->orderBy('name')->get(),
+            'suppliers'      => Supplier::where('is_active', true)->orderBy('name')->get(),
+            'warehouses'     => Warehouse::where('is_active', true)->orderBy('name')->get(),
+            'products'       => Product::where('is_active', true)->orderBy('name')->get(),
         ])->layout('layouts.app');
     }
 }

@@ -36,27 +36,23 @@ class ProductForm extends Component
     public ?float $weight = null;
     public ?string $description = null;
     public int $min_purchase = 1;
-    public float $base_cost = 0;
-    public float $sell_price = 0;
+    
+    // Properti harga dibuat fleksibel (numeric/string) agar tidak error saat dikosongkan
+    public int|float|string|null $base_cost = 0;
+    public int|float|string|null $sell_price = 0;
     public int $min_stock = 0;
     public bool $is_active = true;
 
-    /**
-     * Breakdown harga otomatis, untuk tampilan/deskripsi saja (info, bukan satuan yang dijual).
-     * Admin bebas menambah level & memilih satuannya sendiri, contoh:
-     * [['unit' => 'bal', 'qty' => 8], ['unit' => 'pcs', 'qty' => 20]]
-     * artinya: 1 Dus = 8 Bal, lalu 1 Bal = 20 Pcs.
-     */
     public array $priceBreakdowns = [];
 
     // Gambar
     public array $newImages = [];
     public $existingImages = [];
 
-    // Varian wajib pilih (Warna/Rasa) — opsional per produk
+    // Varian
     public array $variants = [];
 
-    // Stok awal per gudang (hanya diisi saat create)
+    // Stok awal per gudang
     public array $warehouseStocks = [];
 
     protected ProductService $service;
@@ -205,13 +201,10 @@ class ProductForm extends Component
         ];
     }
 
-    /**
-     * Preview breakdown harga live saat admin mengetik/memilih satuan (dipakai di tab Harga).
-     * Menghitung berjenjang lewat semua baris yang sudah diisi, urut dari atas ke bawah.
-     */
     public function getBreakdownPreviewProperty(): ?string
     {
-        if ($this->sell_price <= 0) {
+        $numericPrice = (float) $this->sell_price;
+        if ($numericPrice <= 0) {
             return null;
         }
 
@@ -223,7 +216,7 @@ class ProductForm extends Component
             return null;
         }
 
-        $unitLabel = ProductUnit::from($this->unit)->label();
+        $unitLabel = ProductUnit::tryFrom($this->unit)?->label() ?? ucfirst($this->unit);
         $previousLabel = $unitLabel;
         $cumulativeQty = 1;
         $parts = [];
@@ -232,7 +225,7 @@ class ProductForm extends Component
             $qty = (int) $row['qty'];
             $rowUnitLabel = BreakdownUnit::tryFrom($row['unit'])?->label() ?? ucfirst($row['unit']);
             $cumulativeQty *= $qty;
-            $price = $this->sell_price / $cumulativeQty;
+            $price = $numericPrice / $cumulativeQty;
 
             $parts[] = sprintf(
                 'Isi 1 %s = %d %s (Rp %s/%s)',
@@ -270,12 +263,15 @@ class ProductForm extends Component
             ->values()
             ->toArray();
 
-        // Hanya simpan baris breakdown yang benar-benar terisi lengkap (satuan + jumlah).
         $data['price_breakdowns'] = collect($this->priceBreakdowns)
             ->filter(fn ($row) => ! empty($row['unit']) && (int) ($row['qty'] ?? 0) > 0)
             ->map(fn ($row) => ['unit' => $row['unit'], 'qty' => (int) $row['qty']])
             ->values()
             ->toArray();
+
+        // Pastikan harga tersimpan dalam format float numerik
+        $data['base_cost'] = (float) $this->base_cost;
+        $data['sell_price'] = (float) $this->sell_price;
 
         if ($this->isEdit) {
             $this->service->update(

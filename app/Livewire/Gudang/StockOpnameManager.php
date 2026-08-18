@@ -4,7 +4,6 @@ namespace App\Livewire\Gudang;
 
 use App\Models\Product;
 use App\Models\StockOpname;
-use App\Models\StockOpnameItem;
 use App\Models\Warehouse;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -20,10 +19,10 @@ class StockOpnameManager extends Component
     public $isEdit = false;
     public $showDetailModal = false;
 
-    public $opnameId;
-    public $warehouse_id;
-    public $opname_date;
-    public $notes;
+    public $opnameId = null;
+    public $warehouse_id = '';
+    public $opname_date = '';
+    public $notes = '';
     public $status = 'draft';
 
     public $items = [];
@@ -53,8 +52,9 @@ class StockOpnameManager extends Component
             'opname_date' => 'required|date',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required',
-            'items.*.system_qty' => 'required|integer|min:0',
-            'items.*.actual_qty' => 'required|integer|min:0',
+            'items.*.system_qty' => 'required|numeric|min:0',
+            'items.*.actual_qty' => 'required|numeric|min:0',
+            'items.*.notes' => 'nullable|string',
         ];
     }
 
@@ -74,6 +74,31 @@ class StockOpnameManager extends Component
         $this->items = array_values($this->items);
     }
 
+    /**
+     * Memilih produk dan otomatis mengisi stok sistem dari database
+     */
+    public function selectProduct($index, $productId)
+    {
+        $product = Product::find($productId);
+
+        if ($product) {
+            $this->items[$index]['product_id'] = (string) $product->id;
+            // Mengambil stok sistem dari database
+            $this->items[$index]['system_qty'] = (int) ($product->stock ?? 0);
+            $this->items[$index]['actual_qty'] = (int) ($product->stock ?? 0); // Default set actual sama dengan sistem
+        }
+    }
+
+    /**
+     * Reset pilihan produk pada baris tertentu
+     */
+    public function clearProduct($index)
+    {
+        $this->items[$index]['product_id'] = '';
+        $this->items[$index]['system_qty'] = 0;
+        $this->items[$index]['actual_qty'] = 0;
+    }
+
     public function create()
     {
         $this->resetForm();
@@ -88,7 +113,7 @@ class StockOpnameManager extends Component
         $this->isEdit = true;
         $this->opnameId = $id;
 
-        $opname = StockOpname::with('items')->findOrFail($id);
+        $opname = StockOpname::with('items.product')->findOrFail($id);
         $this->warehouse_id = $opname->warehouse_id;
         $this->opname_date = $opname->opname_date;
         $this->notes = $opname->notes;
@@ -96,9 +121,9 @@ class StockOpnameManager extends Component
 
         foreach ($opname->items as $item) {
             $this->items[] = [
-                'product_id' => $item->product_id,
-                'system_qty' => $item->system_qty,
-                'actual_qty' => $item->actual_qty,
+                'product_id' => (string) $item->product_id,
+                'system_qty' => (int) $item->system_qty,
+                'actual_qty' => (int) $item->actual_qty,
                 'notes' => $item->notes
             ];
         }
@@ -110,6 +135,14 @@ class StockOpnameManager extends Component
     {
         $this->validate();
 
+        $opnameNumber = 'SO-' . date('Ymd') . '-' . rand(1000, 9999);
+        if ($this->isEdit && $this->opnameId) {
+            $existing = StockOpname::find($this->opnameId);
+            if ($existing) {
+                $opnameNumber = $existing->opname_number;
+            }
+        }
+
         $opname = StockOpname::updateOrCreate(
             ['id' => $this->opnameId],
             [
@@ -118,25 +151,28 @@ class StockOpnameManager extends Component
                 'notes' => $this->notes,
                 'status' => $this->status ?: 'draft',
                 'created_by' => auth()->id(),
-                'opname_number' => $this->isEdit ? StockOpname::find($this->opnameId)->opname_number : 'SO-' . time(),
+                'opname_number' => $opnameNumber,
             ]
         );
 
         $opname->items()->delete();
 
         foreach ($this->items as $item) {
-            $difference = $item['actual_qty'] - $item['system_qty'];
-            
+            $systemQty = (int) $item['system_qty'];
+            $actualQty = (int) $item['actual_qty'];
+            $difference = $actualQty - $systemQty;
+
             $opname->items()->create([
                 'product_id' => $item['product_id'],
-                'system_qty' => $item['system_qty'],
-                'actual_qty' => $item['actual_qty'],
+                'system_qty' => $systemQty,
+                'actual_qty' => $actualQty,
                 'difference' => $difference,
                 'notes' => $item['notes'] ?? null,
             ]);
         }
 
         $this->showModal = false;
+        $this->resetForm();
         $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Stock Opname berhasil disimpan']);
     }
 
@@ -154,7 +190,7 @@ class StockOpnameManager extends Component
             'approved_by' => auth()->id(),
             'approved_at' => now()
         ]);
-        
+
         $this->dispatch('toast', ['type' => 'success', 'title' => 'Berhasil', 'message' => 'Stock Opname berhasil disetujui']);
     }
 
@@ -179,6 +215,7 @@ class StockOpnameManager extends Component
     public function resetForm()
     {
         $this->reset(['opnameId', 'warehouse_id', 'opname_date', 'notes', 'status', 'items', 'isEdit']);
+        $this->resetValidation();
     }
 
     public function render()

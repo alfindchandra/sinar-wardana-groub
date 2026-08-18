@@ -125,12 +125,13 @@
                     <h3 class="text-base font-bold text-slate-800 dark:text-white">Harga Checkout</h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Satu-satunya harga yang bisa masuk ke keranjang/checkout pelanggan.</p>
                 </div>
+                <!-- Bagian Input Harga Modal & Jual pada Tab Harga -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Harga Modal (HPP) <span class="text-danger-500">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm">Rp</span>
-                            <input type="number" step="0.01" wire:model="base_cost" class="block w-full pl-9 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
+                            <input type="number" step="0.01" wire:model.blur="base_cost" class="block w-full pl-9 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
                         </div>
                         @error('base_cost') <p class="mt-1.5 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
                     </div>
@@ -138,9 +139,9 @@
                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Harga Jual (Umum) <span class="text-danger-500">*</span></label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-sm">Rp</span>
-                            <input type="number" step="0.01" wire:model.live="sell_price" class="block w-full pl-9 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
+                            <input type="number" step="0.01" wire:model.live.debounce.500ms="sell_price" class="block w-full pl-9 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 sm:text-sm">
                         </div>
-                        <p class="mt-1.5 text-xs text-slate-400">Berlaku per {{ \App\Enums\ProductUnit::from($unit)->label() }} — ini yang tampil di halaman produk &amp; checkout.</p>
+                        <p class="mt-1.5 text-xs text-slate-400">Berlaku per {{ \App\Enums\ProductUnit::tryFrom($unit)?->label() ?? ucfirst($unit) }} — ini yang tampil di halaman produk &amp; checkout.</p>
                         @error('sell_price') <p class="mt-1.5 text-xs text-danger-600 dark:text-danger-400">{{ $message }}</p> @enderror
                     </div>
                 </div>

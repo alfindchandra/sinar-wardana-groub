@@ -49,7 +49,7 @@
         </div>
 
         <div class="mt-3 flex items-center justify-between gap-2">
-            <span class="text-xs text-slate-400">Stok {{ $stock }}</span>
+            <!-- <span class="text-xs text-slate-400">Stok {{ $stock }}</span> -->
 
             @if ($hasVariants)
                 {{-- Produk dengan varian: arahkan ke detail untuk memilih varian dulu --}}
